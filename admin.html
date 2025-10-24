@@ -266,6 +266,9 @@
             <button onclick="showSection('products')" id="nav-products">
                 <i class="fas fa-box"></i> Товары
             </button>
+            <button onclick="showSection('categories')" id="nav-categories">
+                <i class="fas fa-tags"></i> Категории
+            </button>
         </div>
 
         <!-- Дашборд -->
@@ -316,6 +319,15 @@
             </div>
             <div id="productsTable"></div>
         </div>
+
+        <!-- Управление категориями -->
+        <div id="categories" class="admin-section">
+            <h2><i class="fas fa-tags"></i> Управление категориями</h2>
+            <div style="margin-bottom: 15px;">
+                <button onclick="openCategoryModal()" class="btn btn-primary"><i class="fas fa-plus"></i> Добавить категорию</button>
+            </div>
+            <div id="categoriesTable"></div>
+        </div>
     </div>
 
     <!-- Модальное окно добавления админа -->
@@ -355,6 +367,13 @@
                 <div class="form-group">
                     <label for="productDescription">Описание</label>
                     <input type="text" id="productDescription">
+                </div>
+                <div class="form-group">
+                    <label for="productCategory">Категория</label>
+                    <select id="productCategory" required>
+                        <option value="">Выберите категорию</option>
+                        <!-- Категории будут загружены динамически -->
+                    </select>
                 </div>
                 <div class="form-group">
                     <label for="productPrice">Цена</label>
@@ -404,7 +423,33 @@
         </div>
     </div>
 
+    <!-- Модальное окно управления категориями -->
+    <div id="categoryModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeCategoryModal()">&times;</span>
+            <h2 id="categoryModalTitle">Добавить категорию</h2>
+            <form id="categoryForm">
+                <input type="hidden" id="categoryId">
+                <div class="form-group">
+                    <label for="categoryKey">Ключ категории (английский)</label>
+                    <input type="text" id="categoryKey" required placeholder="например: hat, sweater">
+                </div>
+                <div class="form-group">
+                    <label for="categoryName">Название категории (русский)</label>
+                    <input type="text" id="categoryName" required placeholder="например: Шапка, Кофта">
+                </div>
+                <div class="form-group">
+                    <label for="categoryDescription">Описание категории</label>
+                    <input type="text" id="categoryDescription" placeholder="Краткое описание категории">
+                </div>
+                <button type="submit" class="btn btn-primary">Сохранить</button>
+            </form>
+        </div>
+    </div>
+
     <script defer src="js/auth.js"></script>
+    <script defer src="js/init-categories.js"></script>
+    <script defer src="js/init-products.js"></script>
     <script defer src="js/admin.js"></script>
 </body>
 </html>

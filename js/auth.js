@@ -7,6 +7,7 @@ class AuthSystem {
         this.ordersKey = 'mirar_shop_orders';
         this.adminsKey = 'mirar_shop_admins';
         this.productsKey = 'mirar_shop_products';
+        this.categoriesKey = 'mirar_shop_categories';
         this.init();
     }
 
@@ -31,12 +32,112 @@ class AuthSystem {
         if (!localStorage.getItem(this.productsKey)) {
             localStorage.setItem(this.productsKey, JSON.stringify([]));
         }
+
+        // Создаем пустой массив категорий, если его нет
+        if (!localStorage.getItem(this.categoriesKey)) {
+            localStorage.setItem(this.categoriesKey, JSON.stringify([]));
+        }
     }
 
     // Получение всех пользователей
     getUsers() {
         const users = localStorage.getItem(this.usersKey);
         return users ? JSON.parse(users) : [];
+    }
+
+    // === КАТЕГОРИИ ===
+    getCategories() {
+        const categories = localStorage.getItem(this.categoriesKey);
+        return categories ? JSON.parse(categories) : [];
+    }
+
+    saveCategories(categories) {
+        localStorage.setItem(this.categoriesKey, JSON.stringify(categories));
+    }
+
+    // Добавление категории (только для админов)
+    addCategory(categoryData) {
+        if (!this.isAdmin()) {
+            throw new Error('Доступ запрещен. Требуются права администратора');
+        }
+
+        const { key, name, description } = categoryData;
+
+        if (!key || !name) {
+            throw new Error('Ключ и название категории обязательны');
+        }
+
+        const categories = this.getCategories();
+        
+        // Проверяем, не существует ли уже категория с таким ключом
+        if (categories.find(c => c.key === key)) {
+            throw new Error('Категория с таким ключом уже существует');
+        }
+
+        const newCategory = {
+            id: this.generateId(),
+            key: key.trim(),
+            name: name.trim(),
+            description: (description || '').trim(),
+            createdDate: new Date().toISOString(),
+            updatedDate: new Date().toISOString()
+        };
+
+        categories.push(newCategory);
+        this.saveCategories(categories);
+        return { success: true, message: 'Категория добавлена', category: newCategory };
+    }
+
+    // Обновление категории (только для админов)
+    updateCategory(categoryId, updates) {
+        if (!this.isAdmin()) {
+            throw new Error('Доступ запрещен. Требуются права администратора');
+        }
+
+        const categories = this.getCategories();
+        const idx = categories.findIndex(c => c.id === categoryId);
+        if (idx === -1) {
+            throw new Error('Категория не найдена');
+        }
+
+        // Проверяем, не существует ли уже категория с таким ключом (если ключ изменился)
+        if (updates.key && updates.key !== categories[idx].key) {
+            if (categories.find(c => c.key === updates.key && c.id !== categoryId)) {
+                throw new Error('Категория с таким ключом уже существует');
+            }
+        }
+
+        categories[idx] = {
+            ...categories[idx],
+            ...updates,
+            updatedDate: new Date().toISOString()
+        };
+        this.saveCategories(categories);
+        return { success: true, message: 'Категория обновлена', category: categories[idx] };
+    }
+
+    // Удаление категории (только для админов)
+    deleteCategory(categoryId) {
+        if (!this.isAdmin()) {
+            throw new Error('Доступ запрещен. Требуются права администратора');
+        }
+
+        const categories = this.getCategories();
+        const idx = categories.findIndex(c => c.id === categoryId);
+        if (idx === -1) {
+            throw new Error('Категория не найдена');
+        }
+
+        // Проверяем, не используются ли товары с этой категорией
+        const products = this.getProducts();
+        const productsWithCategory = products.filter(p => p.category === categories[idx].key);
+        if (productsWithCategory.length > 0) {
+            throw new Error(`Нельзя удалить категорию, которая используется в ${productsWithCategory.length} товарах`);
+        }
+
+        const deleted = categories.splice(idx, 1)[0];
+        this.saveCategories(categories);
+        return { success: true, message: `Категория "${deleted.name}" удалена`, category: deleted };
     }
 
     // === ТОВАРЫ ===
@@ -58,6 +159,7 @@ class AuthSystem {
         const {
             name,
             description,
+            category,
             price,
             quantity,
             sizes, // объект вида { S: {enabled:true}, M:{enabled:false}, ... }
@@ -66,8 +168,8 @@ class AuthSystem {
         } = productData;
         const images = Array.isArray(productData.images) ? productData.images.filter(Boolean) : [];
 
-        if (!name || !price) {
-            throw new Error('Название и цена обязательны');
+        if (!name || !price || !category) {
+            throw new Error('Название, цена и категория обязательны');
         }
 
         const products = this.getProducts();
@@ -75,6 +177,7 @@ class AuthSystem {
             id: this.generateId(),
             name: name.trim(),
             description: (description || '').trim(),
+            category: category.trim(),
             price: Number(price),
             quantity: Number(quantity || 0),
             oneSize: !!oneSize,

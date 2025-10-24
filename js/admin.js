@@ -66,6 +66,9 @@ function showSection(sectionName) {
         case 'products':
             loadProducts();
             break;
+        case 'categories':
+            loadCategories();
+            break;
     }
 }
 
@@ -434,6 +437,7 @@ function loadProducts() {
                     <tr>
                         <th>Картинка</th>
                         <th>Название</th>
+                        <th>Категория</th>
                         <th>Цена</th>
                         <th>Кол-во</th>
                         <th>Размеры</th>
@@ -450,6 +454,7 @@ function loadProducts() {
                                     : '-')}
                             </td>
                             <td>${p.name}</td>
+                            <td>${getCategoryName(p.category)}</td>
                             <td>${Number(p.price).toLocaleString('ru-RU', {style:'currency', currency:'RUB'})}</td>
                             <td>${p.quantity}</td>
                             <td>${renderSizes(p.sizes)}</td>
@@ -474,6 +479,55 @@ function renderSizes(sizes) {
     return entries.join('<br>');
 }
 
+function getCategoryName(category) {
+    try {
+        // Пытаемся получить название из актуальных категорий
+        const categories = window.authSystem.getCategories();
+        const categoryObj = categories.find(c => c.key === category);
+        if (categoryObj) {
+            return categoryObj.name;
+        }
+    } catch (error) {
+        console.error('Ошибка при получении названия категории:', error);
+    }
+    
+    // Fallback на старые названия, если категория не найдена
+    const categoryNames = {
+        'hat': 'Шапка',
+        'sweater': 'Кофта',
+        't-shirt': 'Майка',
+        'pants': 'Штаны',
+        'socks': 'Носки',
+        'underwear': 'Нижнее белье',
+        'jacket': 'Куртка',
+        'shorts': 'Шорты'
+    };
+    return categoryNames[category] || category || '-';
+}
+
+// Функция для загрузки категорий в форму товара
+function loadCategoriesForProduct() {
+    try {
+        const categories = window.authSystem.getCategories();
+        const categorySelect = document.getElementById('productCategory');
+        
+        if (!categorySelect) return;
+        
+        // Очищаем существующие опции (кроме первой)
+        categorySelect.innerHTML = '<option value="">Выберите категорию</option>';
+        
+        // Добавляем актуальные категории
+        categories.forEach(category => {
+            const option = document.createElement('option');
+            option.value = category.key;
+            option.textContent = category.name;
+            categorySelect.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Ошибка при загрузке категорий:', error);
+    }
+}
+
 function openProductModal() {
     currentProductId = null;
     document.getElementById('productModalTitle').textContent = 'Добавить товар';
@@ -483,6 +537,10 @@ function openProductModal() {
     const oneSizeCb = document.getElementById('oneSize');
     if (oneSizeCb) oneSizeCb.checked = false;
     toggleSizesDisabled(false);
+    
+    // Загружаем актуальные категории
+    loadCategoriesForProduct();
+    
     document.getElementById('productModal').style.display = 'block';
 }
 
@@ -517,6 +575,14 @@ function editProduct(productId) {
             XL: !!(product.sizes && product.sizes.XL && product.sizes.XL.enabled)
         });
 
+        // Загружаем актуальные категории
+        loadCategoriesForProduct();
+        
+        // Устанавливаем категорию товара после загрузки категорий
+        setTimeout(() => {
+            document.getElementById('productCategory').value = product.category || '';
+        }, 100);
+
         document.getElementById('productModal').style.display = 'block';
     } catch (error) {
         alert('Ошибка при открытии товара: ' + error.message);
@@ -547,6 +613,7 @@ function onSubmitProductForm(e) {
         const id = document.getElementById('productId').value || null;
         const name = document.getElementById('productName').value;
         const description = document.getElementById('productDescription').value;
+        const category = document.getElementById('productCategory').value;
         const price = document.getElementById('productPrice').value;
         const quantity = document.getElementById('productQuantity').value;
         const oneSize = document.getElementById('oneSize').checked;
@@ -563,6 +630,10 @@ function onSubmitProductForm(e) {
         // Простая валидация
         if (!name || name.trim() === '') {
             alert('Введите название товара');
+            return;
+        }
+        if (!category || category.trim() === '') {
+            alert('Выберите категорию товара');
             return;
         }
         const priceNum = Number(price);
@@ -584,24 +655,24 @@ function onSubmitProductForm(e) {
                 reader.onerror = () => reject(new Error('Не удалось прочитать файл изображения'));
                 reader.readAsDataURL(file);
             }))).then(images => {
-                saveProduct({ id, name, description, price: priceNum, quantity: qtyNum, sizes, oneSize, images });
+                saveProduct({ id, name, description, category, price: priceNum, quantity: qtyNum, sizes, oneSize, images });
             }).catch(err => {
                 alert('Ошибка при чтении изображений: ' + err.message);
             });
         } else {
             // Без изменения изображений
-            saveProduct({ id, name, description, price: priceNum, quantity: qtyNum, sizes, oneSize });
+            saveProduct({ id, name, description, category, price: priceNum, quantity: qtyNum, sizes, oneSize });
         }
     } catch (error) {
         alert('Ошибка при сохранении товара: ' + error.message);
     }
 }
 
-function saveProduct({ id, name, description, price, quantity, sizes, oneSize, images, imageDataUrl }) {
+function saveProduct({ id, name, description, category, price, quantity, sizes, oneSize, images, imageDataUrl }) {
     try {
         if (id) {
             // Обновление
-            const updates = { name, description, price, quantity, sizes };
+            const updates = { name, description, category, price, quantity, sizes };
             if (oneSize !== undefined) updates.oneSize = !!oneSize;
             if (Array.isArray(images) && images.length) updates.images = images;
             if (imageDataUrl) updates.imageDataUrl = imageDataUrl;
@@ -609,7 +680,7 @@ function saveProduct({ id, name, description, price, quantity, sizes, oneSize, i
             alert(res.message);
         } else {
             // Добавление
-            const payload = { name, description, price, quantity, sizes, oneSize };
+            const payload = { name, description, category, price, quantity, sizes, oneSize };
             if (Array.isArray(images) && images.length) payload.images = images;
             if (imageDataUrl) payload.imageDataUrl = imageDataUrl;
             const res = window.authSystem.addProduct(payload);
@@ -644,3 +715,131 @@ function deleteAdmin(adminId) {
         }
     }
 }
+
+// ======= Управление категориями =======
+function loadCategories() {
+    try {
+        const categories = window.authSystem.getCategories();
+        const categoriesTable = document.getElementById('categoriesTable');
+
+        if (!categoriesTable) return;
+
+        if (categories.length === 0) {
+            categoriesTable.innerHTML = '<p>Категории не найдены</p>';
+            return;
+        }
+
+        categoriesTable.innerHTML = `
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Ключ</th>
+                        <th>Название</th>
+                        <th>Описание</th>
+                        <th>Дата создания</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${categories.map(c => `
+                        <tr>
+                            <td><code>${c.key}</code></td>
+                            <td>${c.name}</td>
+                            <td>${c.description || '-'}</td>
+                            <td>${new Date(c.createdDate).toLocaleDateString()}</td>
+                            <td>
+                                <button class="btn btn-warning" onclick="editCategory('${c.id}')"><i class="fas fa-edit"></i> Редактировать</button>
+                                <button class="btn btn-danger" onclick="deleteCategoryAdmin('${c.id}')"><i class="fas fa-trash"></i> Удалить</button>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+    } catch (error) {
+        alert('Ошибка при загрузке категорий: ' + error.message);
+    }
+}
+
+function openCategoryModal() {
+    currentCategoryId = null;
+    document.getElementById('categoryModalTitle').textContent = 'Добавить категорию';
+    document.getElementById('categoryForm').reset();
+    document.getElementById('categoryModal').style.display = 'block';
+}
+
+function closeCategoryModal() {
+    document.getElementById('categoryModal').style.display = 'none';
+    currentCategoryId = null;
+}
+
+function editCategory(categoryId) {
+    try {
+        const categories = window.authSystem.getCategories();
+        const category = categories.find(c => c.id === categoryId);
+        if (!category) {
+            alert('Категория не найдена');
+            return;
+        }
+
+        currentCategoryId = category.id;
+        document.getElementById('categoryModalTitle').textContent = 'Редактировать категорию';
+        document.getElementById('categoryId').value = category.id;
+        document.getElementById('categoryKey').value = category.key;
+        document.getElementById('categoryName').value = category.name;
+        document.getElementById('categoryDescription').value = category.description || '';
+
+        document.getElementById('categoryModal').style.display = 'block';
+    } catch (error) {
+        alert('Ошибка при открытии категории: ' + error.message);
+    }
+}
+
+function deleteCategoryAdmin(categoryId) {
+    if (!confirm('Удалить эту категорию?')) return;
+    try {
+        const res = window.authSystem.deleteCategory(categoryId);
+        alert(res.message);
+        loadCategories();
+        // Обновляем список товаров, чтобы показать изменения
+        loadProducts();
+    } catch (error) {
+        alert('Ошибка при удалении: ' + error.message);
+    }
+}
+
+// Обработка формы категории
+document.getElementById('categoryForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    try {
+        const id = document.getElementById('categoryId').value || null;
+        const key = document.getElementById('categoryKey').value;
+        const name = document.getElementById('categoryName').value;
+        const description = document.getElementById('categoryDescription').value;
+
+        if (!key || !name) {
+            alert('Ключ и название категории обязательны');
+            return;
+        }
+
+        if (id) {
+            // Обновление
+            const updates = { key, name, description };
+            const res = window.authSystem.updateCategory(id, updates);
+            alert(res.message);
+        } else {
+            // Добавление
+            const payload = { key, name, description };
+            const res = window.authSystem.addCategory(payload);
+            alert(res.message);
+        }
+        closeCategoryModal();
+        loadCategories();
+        // Обновляем список товаров, чтобы показать изменения в категориях
+        loadProducts();
+    } catch (error) {
+        alert('Ошибка при сохранении: ' + error.message);
+    }
+});
+
+let currentCategoryId = null;

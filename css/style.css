@@ -261,13 +261,69 @@ header p {
     font-size: 16px;
 }
 
-#filters-container div {
+.filter-group {
+    margin-bottom: 20px;
+    border: 1px solid #333;
+    padding: 15px;
+    border-radius: 5px;
+    background-color: #1a1a1a;
+    color: white;
+}
+
+.filter-group label {
+    display: block;
     margin-bottom: 10px;
-    border: 1px solid #333; /* Dark grey border */
-    padding: 10px; /* Add padding inside the box */
-    border-radius: 5px; /* Rounded corners */
-    background-color: #1a1a1a; /* Dark background */
-    color: white; /* White text color */
+    font-weight: bold;
+    color: white;
+}
+
+.category-filters, .size-filters {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.category-filters label, .size-filters label {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+    font-weight: normal;
+    cursor: pointer;
+}
+
+.filter-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.apply-filters-btn, .reset-filters-btn {
+    border: none;
+    padding: 12px 24px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    flex: 1;
+    transition: all 0.3s ease;
+}
+
+.apply-filters-btn {
+    background-color: #007bff;
+    color: white;
+}
+
+.apply-filters-btn:hover {
+    background-color: #0056b3;
+}
+
+.reset-filters-btn {
+    background-color: #6c757d;
+    color: white;
+}
+
+.reset-filters-btn:hover {
+    background-color: #545b62;
 }
 
 #filters-container label {

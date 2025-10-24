@@ -1,6 +1,8 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Проверяем статус авторизации при загрузке страницы
     checkAuthStatus();
+    // Загружаем категории для фильтров
+    loadCategoriesForFilters();
     // Рендерим товары
     renderProducts();
     
@@ -339,6 +341,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Обработка фильтров
     const toggleFiltersBtn = document.getElementById('toggle-filters');
     const filtersContainer = document.getElementById('filters-container');
+    const applyFiltersBtn = document.getElementById('apply-filters');
+    const resetFiltersBtn = document.getElementById('reset-filters');
 
     toggleFiltersBtn.addEventListener('click', () => {
         if (filtersContainer.style.display === 'none') {
@@ -355,6 +359,150 @@ document.addEventListener('DOMContentLoaded', function() {
     priceRange.addEventListener('input', () => {
         priceValue.textContent = priceRange.value;
     });
+
+    // Обработка применения фильтров
+    applyFiltersBtn.addEventListener('click', () => {
+        applyFilters();
+    });
+
+    // Обработка сброса фильтров
+    resetFiltersBtn.addEventListener('click', () => {
+        resetFilters();
+    });
+
+    // Функция применения фильтров
+    function applyFilters() {
+        const selectedCategories = Array.from(document.querySelectorAll('input[name="category"]:checked')).map(cb => cb.value);
+        const selectedSizes = Array.from(document.querySelectorAll('input[name="size"]:checked')).map(cb => cb.value);
+        const maxPrice = parseInt(priceRange.value);
+
+        // Получаем все товары
+        const products = (window.authSystem && typeof window.authSystem.getProducts === 'function')
+            ? window.authSystem.getProducts()
+            : [];
+
+        // Фильтруем товары
+        const filteredProducts = products.filter(product => {
+            // Проверка категории
+            const categoryMatch = selectedCategories.length === 0 || selectedCategories.includes(product.category);
+            
+            // Проверка размера
+            const sizeMatch = selectedSizes.length === 0 || 
+                selectedSizes.includes('one-size') && product.oneSize ||
+                selectedSizes.some(size => product.sizes && product.sizes[size] && product.sizes[size].enabled);
+            
+            // Проверка цены
+            const priceMatch = product.price <= maxPrice;
+
+            return categoryMatch && sizeMatch && priceMatch;
+        });
+
+        // Отображаем отфильтрованные товары
+        displayFilteredProducts(filteredProducts);
+    }
+
+    // Функция отображения отфильтрованных товаров
+    function displayFilteredProducts(products) {
+        const productsGridSection = document.getElementById('products');
+        if (!productsGridSection) return;
+
+        if (!products || products.length === 0) {
+            productsGridSection.innerHTML = '<p>Товары по выбранным фильтрам не найдены.</p>';
+            return;
+        }
+
+        productsGridSection.innerHTML = products.map(p => {
+            const enabledSizes = Object.entries(p.sizes || {})
+                .filter(([, cfg]) => cfg && cfg.enabled)
+                .map(([size]) => size);
+
+            const hasOneSize = !!p.oneSize;
+            const hasSizes = !hasOneSize && enabledSizes.length > 0;
+            const sizeSelectHtml = hasOneSize ? `
+                <div class="size-selector"><span>Единый размер</span></div>
+            ` : (hasSizes ? `
+                <div class="size-selector">
+                    <select class="size-select">
+                        <option value="">Выберите размер</option>
+                        ${enabledSizes.map(s => `<option value="${s}">${s}</option>`).join('')}
+                    </select>
+                </div>
+            ` : '');
+
+            const images = Array.isArray(p.images) ? p.images : (p.imageDataUrl ? [p.imageDataUrl] : []);
+            const imgSrc = images[0] || 'images/placeholder.jpg';
+            const priceLabel = `${Number(p.price) || 0} Br`;
+
+            return `
+                <div class="product-card" data-product-id="${p.id}">
+                    <div class="product-image" data-index="0">
+                        <img src="${imgSrc}" alt="${p.name}" loading="lazy">
+                        ${images.length > 1 ? `
+                            <button class="carousel-prev" aria-label="Предыдущая">&#10094;</button>
+                            <button class="carousel-next" aria-label="Следующая">&#10095;</button>
+                        ` : ''}
+                    </div>
+                    <div class="product-info">
+                        <h3>${p.name}</h3>
+                        <p style="margin:8px 0;font-weight:600;">${priceLabel}</p>
+                        ${sizeSelectHtml}
+                        <button class="order-btn">Заказать</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        // Привязать кнопки и стрелки заново
+        bindOrderButtons();
+    }
+
+    // Функция сброса фильтров
+    function resetFilters() {
+        // Перезагружаем категории (на случай, если они изменились)
+        loadCategoriesForFilters();
+        
+        // Сбрасываем все чекбоксы категорий
+        document.querySelectorAll('input[name="category"]').forEach(cb => cb.checked = false);
+        
+        // Сбрасываем все чекбоксы размеров
+        document.querySelectorAll('input[name="size"]').forEach(cb => cb.checked = false);
+        
+        // Сбрасываем слайдер цены
+        priceRange.value = 2000;
+        priceValue.textContent = '2000';
+        
+        // Показываем все товары
+        const products = (window.authSystem && typeof window.authSystem.getProducts === 'function')
+            ? window.authSystem.getProducts()
+            : [];
+        displayFilteredProducts(products);
+    }
+
+    // Функция для загрузки категорий в фильтры
+    function loadCategoriesForFilters() {
+        try {
+            const categories = (window.authSystem && typeof window.authSystem.getCategories === 'function')
+                ? window.authSystem.getCategories()
+                : [];
+            
+            const categoryFiltersContainer = document.getElementById('category-filters');
+            if (!categoryFiltersContainer) return;
+            
+            // Очищаем контейнер
+            categoryFiltersContainer.innerHTML = '';
+            
+            // Добавляем категории
+            categories.forEach(category => {
+                const label = document.createElement('label');
+                label.innerHTML = `
+                    <input type="checkbox" name="category" value="${category.key}"> ${category.name}
+                `;
+                categoryFiltersContainer.appendChild(label);
+            });
+        } catch (error) {
+            console.error('Ошибка при загрузке категорий для фильтров:', error);
+        }
+    }
 
     // Функция для проверки статуса авторизации
     function checkAuthStatus() {
@@ -389,51 +537,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            productsGridSection.innerHTML = products.map(p => {
-                const enabledSizes = Object.entries(p.sizes || {})
-                    .filter(([, cfg]) => cfg && cfg.enabled)
-                    .map(([size]) => size);
-
-                const hasOneSize = !!p.oneSize;
-                const hasSizes = !hasOneSize && enabledSizes.length > 0;
-                const sizeSelectHtml = hasOneSize ? `
-                    <div class="size-selector"><span>Единый размер</span></div>
-                ` : (hasSizes ? `
-                    <div class="size-selector">
-                        <select class="size-select">
-                            <option value="">Выберите размер</option>
-                            ${enabledSizes.map(s => `<option value="${s}">${s}</option>`).join('')}
-                        </select>
-                    </div>
-                ` : '');
-
-                const images = Array.isArray(p.images) ? p.images : (p.imageDataUrl ? [p.imageDataUrl] : []);
-                const imgSrc = images[0] || 'images/placeholder.jpg';
-                // Белорусский рубль (BYN) или символ бел. рубля
-                const priceLabel = `${Number(p.price) || 0} Br`;
-
-                return `
-                    <div class="product-card" data-product-id="${p.id}">
-                        <div class="product-image" data-index="0">
-                            <img src="${imgSrc}" alt="${p.name}" loading="lazy">
-                            ${images.length > 1 ? `
-                                <button class="carousel-prev" aria-label="Предыдущая">&#10094;</button>
-                                <button class="carousel-next" aria-label="Следующая">&#10095;</button>
-                            ` : ''}
-                        </div>
-                        <div class="product-info">
-                            <h3>${p.name}</h3>
-                            
-                            <p style="margin:8px 0;font-weight:600;">${priceLabel}</p>
-                            ${sizeSelectHtml}
-                            <button class="order-btn">Заказать</button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
-            // Привязать кнопки и стрелки заново
-            bindOrderButtons();
+            // Показываем все товары по умолчанию
+            displayFilteredProducts(products);
         } catch (error) {
             console.error('Ошибка при рендере товаров:', error);
         }
