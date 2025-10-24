@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Shop</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Боковое меню -->
+        <nav class="sidebar">
+            <div class="logo">
+                <h2>Mirar wear</h2>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#home" class="active"><i class="fas fa-home"></i> Главная</a></li>
+                <li><a href="#about"><i class="fas fa-info-circle"></i> О нас</a></li>
+                <li><a href="#contact"><i class="fas fa-envelope"></i> Контакты</a></li>
+                <li><a href="#" id="loginBtn"><i class="fas fa-user"></i> Войти</a></li>
+                <li><a href="#" id="registerBtn"><i class="fas fa-user-plus"></i> Регистрация</a></li>
+                <li><a href="admin.html" id="adminBtn" style="display: none;"><i class="fas fa-shield-alt"></i> Админ-панель</a></li>
+            </ul>
+        </nav>
+
+        <!-- Основной контент -->
+        <main class="main-content">
+            <header id="home">
+                <h1>Mirar wear</h1>
+                <p>сюда че нибудь напишу</p>
+            </header>
+
+            <!-- Характеристики и фильтры -->
+            <section class="characteristics-filter">
+                <button id="toggle-filters"><i class="fas fa-cogs"></i> Фильтры</button>
+                <div id="filters-container" style="display: none;">
+                    <h4>Выберите характеристики:</h4>
+                    <div>
+                        <label><input type="checkbox" name="char1" value="value1"> Характеристика 1</label>
+                    </div>
+                    <div>
+                        <label><input type="checkbox" name="char2" value="value2"> Характеристика 2</label>
+                    </div>
+                    <div>
+                        <label for="price-range">Цена до:</label>
+                        <input type="range" id="price-range" name="price" min="0" max="1000" value="500">
+                        <span id="price-value">500</span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="products-grid" id="products">
+                <!-- Карточки товаров -->
+                <div class="product-card" data-product-id="1">
+                    <div class="product-image">
+                        <img src="images/placeholder.jpg" alt="Товар 1" loading="lazy">
+                    </div>
+                    <div class="product-info">
+                        <h3>маечка</h3>
+                        <p>крутая майка</p>
+                        <div class="size-selector">
+                            <select class="size-select">
+                                <option value="">Выберите размер</option>
+                                <option value="S">S</option>
+                                <option value="M">M</option>
+                                <option value="L">L</option>
+                                <option value="XL">XL</option>
+                            </select>
+                        </div>
+                        <button class="order-btn">Заказать</button>
+                    </div>
+                </div>
+
+                <div class="product-card" data-product-id="2">
+                    <div class="product-image">
+                        <img src="images/placeholder.jpg" alt="Товар 2" loading="lazy">
+                    </div>
+                    <div class="product-info">
+                        <h3>трусы со слоником (временно)</h3>
+                        <p>Классические семейники</p>
+                        <div class="size-selector">
+                            <select class="size-select">
+                                <option value="">Выберите размер</option>
+                                <option value="S">S</option>
+                                <option value="M">M</option>
+                                <option value="L">L</option>
+                                <option value="XL">XL</option>
+                            </select>
+                        </div>
+                        <button class="order-btn">Заказать</button>
+                    </div>
+                </div>
+
+                <div class="product-card" data-product-id="3">
+                    <div class="product-image">
+                        <img src="images/placeholder.jpg" alt="Товар 3" loading="lazy">
+                    </div>
+                    <div class="product-info">
+                        <h3>жесткие узкие штаны</h3>
+                        <p>уютные штаны для повседневной носки</p>
+                        <div class="size-selector">
+                            <select class="size-select">
+                                <option value="">Выберите размер</option>
+                                <option value="S">S</option>
+                                <option value="M">M</option>
+                                <option value="L">L</option>
+                                <option value="XL">XL</option>
+                            </select>
+                        </div>
+                        <button class="order-btn">Заказать</button>
+                    </div>
+                </div>
+
+                <div class="product-card" data-product-id="4">
+                    <div class="product-image">
+                        <img src="images/placeholder.jpg" alt="Товар 4" loading="lazy">
+                    </div>
+                    <div class="product-info">
+                        <h3>носки </h3>
+                        <p>модные носки до колена</p>
+                        <div class="size-selector">
+                            <select class="size-select">
+                                <option value="">Выберите размер</option>
+                                <option value="S">S</option>
+                                <option value="M">M</option>
+                                <option value="L">L</option>
+                                <option value="XL">XL</option>
+                            </select>
+                        </div>
+                        <button class="order-btn">Заказать</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Секция О нас -->
+            <section id="about" style="display: none;">
+                <h2>О нас</h2>
+                <p>Здесь будет инфа о бренде.</p>
+            </section>
+
+            <!-- Секция Контакты -->
+            <section id="contact" style="display: none;">
+                <h2>Контакты</h2>
+                <p>Здесь будет контактная инфа о бренде.</p>
+            </section>
+        </main>
+    </div>
+
+    <!-- Модальное окно входа -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Вход</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="loginEmail">Email:</label>
+                    <input type="email" id="loginEmail" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Пароль:</label>
+                    <input type="password" id="loginPassword" required>
+                </div>
+                <button type="submit" class="submit-btn">Войти</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Модальное окно регистрации -->
+    <div id="registerModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Регистрация</h2>
+            <form id="registerForm">
+                <div class="form-group">
+                    <label for="registerName">Имя:</label>
+                    <input type="text" id="registerName" required>
+                </div>
+                <div class="form-group">
+                    <label for="registerEmail">Email:</label>
+                    <input type="email" id="registerEmail" required>
+                </div>
+                <div class="form-group">
+                    <label for="registerPhone">Телефон:</label>
+                    <input type="tel" id="registerPhone" required>
+                </div>
+                <div class="form-group">
+                    <label for="registerPassword">Пароль:</label>
+                    <input type="password" id="registerPassword" required>
+                </div>
+                <button type="submit" class="submit-btn">Зарегистрироваться</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Модальное окно оформления заказа -->
+    <div id="orderModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Оформление заказа</h2>
+            <form id="orderForm">
+                <div class="form-group">
+                    <label for="orderName">Имя:</label>
+                    <input type="text" id="orderName" required>
+                </div>
+                <div class="form-group">
+                    <label for="orderPhone">Телефон:</label>
+                    <input type="tel" id="orderPhone" required>
+                </div>
+                <div class="form-group">
+                    <label for="orderEmail">Email:</label>
+                    <input type="email" id="orderEmail" required>
+                </div>
+                <div class="form-group">
+                    <label for="orderSize">Размер:</label>
+                    <select id="orderSize" required>
+                        <option value="">Выберите размер</option>
+                        <option value="S">S</option>
+                        <option value="M">M</option>
+                        <option value="L">L</option>
+                        <option value="XL">XL</option>
+                    </select>
+                </div>
+                <button type="submit" class="submit-btn">Подтвердить заказ</button>
+            </form>
+        </div>
+    </div>
+
+    <script defer src="js/auth.js"></script>
+    <script defer src="js/main.js"></script>
+</body>
+</html> 

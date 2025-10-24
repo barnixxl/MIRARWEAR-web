@@ -1,0 +1,568 @@
+/* Сброс стилей и общие настройки */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    font-family: 'Arial', sans-serif;
+    min-height: 100%;
+    background-color: #ffffff;
+    /*background-image: url('/images/фон6.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    color: #333;*/
+
+    /*дефолтные настройки заднего фона 
+    
+     font-family: 'Arial', sans-serif;
+    min-height: 100%;
+    background-color: #ffffff;
+    background-image: url('/images/фон5.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: 100px 200px;
+    background-attachment: fixed;
+    color: #333;
+    */
+    
+}
+
+/* На мобильных отключаем фиксированный фон, чтобы не лагал скролл */
+@media screen and (max-width: 768px) {
+    html, body {
+        background-attachment: scroll;
+    }
+}
+
+.container {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* Стили для бокового меню */
+.sidebar {
+    width: 280px;
+    background-color: #1a1a1a;
+    color: white;
+    padding: 20px 0 20px 0;
+    position: fixed;
+    height: 100vh;
+    transform: translateX(-250px); /* Keep 30px visible */
+    transition: transform 0.4s cubic-bezier(0.4,0,0.2,1), padding 0.4s cubic-bezier(0.4,0,0.2,1); /* Smooth transform and padding */
+    z-index: 10;
+    box-shadow: 2px 0 8px rgba(0,0,0,0.08);
+    overflow-x: hidden;
+    border-top-right-radius: 12px;
+    border-bottom-right-radius: 12px;
+    white-space: nowrap;
+    will-change: transform; /* Optimize transform */
+}
+
+.sidebar:hover,
+.sidebar:focus-within {
+    transform: translateX(0); /* Slide in fully on hover/focus */
+    padding: 20px; /* Adjust padding */
+}
+
+/* Удаляем стили для полоски-индикатора, если они не нужны */
+.logo,
+.nav-links {
+    opacity: 0;
+    transition: opacity 0.3s 0.1s;
+}
+
+.sidebar:hover .logo,
+.sidebar:hover .nav-links,
+.sidebar:focus-within .logo,
+.sidebar:focus-within .nav-links {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.logo:not(.sidebar:hover .logo):not(.sidebar:focus-within .logo),
+.nav-links:not(.sidebar:hover .nav-links):not(.sidebar:focus-within .nav-links) {
+    pointer-events: none;
+}
+
+.logo {
+    margin-bottom: 30px;
+    text-align: center;
+    font-size: 28px;
+    color: white;
+}
+
+.nav-links {
+    list-style: none;
+}
+
+.nav-links li {
+    margin-bottom: 15px;
+}
+
+.nav-links a {
+    color: #fff;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    border-radius: 5px;
+    transition: all 0.3s ease;
+}
+
+.nav-links a i {
+    margin-right: 10px;
+    width: 20px;
+}
+
+.nav-links a:hover,
+.nav-links a.active {
+    background-color: #333;
+    transform: translateX(5px);
+}
+
+/* Основной контент */
+.main-content {
+    flex: 1;
+    margin-left: 30px; /* Initial margin for collapsed sidebar visible part (30px visible) */
+    padding: 30px;
+    transition: margin-left 0.4s cubic-bezier(0.4,0,0.2,1); /* Smooth margin transition */
+    will-change: margin-left; /* Optimize margin-left */
+}
+
+.sidebar:hover ~ .main-content,
+.sidebar:focus-within ~ .main-content {
+    margin-left: 280px; /* Shift main content by sidebar width on hover/focus */
+}
+
+header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+header h1 {
+    font-size: 36px;
+    color: #1a1a1a;
+    margin-bottom: 10px;
+}
+
+header p {
+    color: #666;
+    font-size: 18px;
+}
+
+/* Сетка товаров */
+.products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 30px;
+    padding: 20px;
+}
+
+/* Карточки товаров */
+.product-card {
+    background-color: rgb(255, 255, 255);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+}
+
+.product-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+.product-image {
+    width: 100%;
+    height: 200px;
+    overflow: hidden;
+    transition: padding 0.3s ease;
+}
+
+.product-card:hover .product-image {
+    padding-top: 20px;
+}
+
+.product-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.product-card:hover .product-image img {
+    transform: scale(1.1);
+}
+
+.product-info {
+    padding: 20px;
+    padding-top: 30px;
+    position: relative;
+    z-index: 2;
+    transition: transform 0.3s ease;
+}
+
+.product-card:hover .product-info {
+    transform: scale(1.05);
+}
+
+.product-info h3 {
+    color: #1a1a1a;
+    margin-bottom: 10px;
+    font-size: 18px;
+}
+
+.product-info p {
+    color: #666;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+/* Характеристики и фильтры */
+.characteristics-filter {
+    margin-bottom: 30px;
+    background-color: #fff; /* White background for the filter section */
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    max-width: 300px; /* Limit the width of the filter section */
+}
+
+#toggle-filters {
+    background-color: #000000; /* Dark background for the button */
+    color: rgb(255, 255, 255); /* White icon color */
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 18px;
+    transition: background-color 0.3s ease;
+}
+
+#toggle-filters:hover {
+    background-color: #333; /* Slightly lighter dark on hover */
+}
+
+#filters-container {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #eee; /* Subtle border at the top */
+}
+
+#filters-container h4 {
+    color: #1a1a1a; /* Dark heading color */
+    margin-bottom: 15px;
+    font-size: 16px;
+}
+
+#filters-container div {
+    margin-bottom: 10px;
+    border: 1px solid #333; /* Dark grey border */
+    padding: 10px; /* Add padding inside the box */
+    border-radius: 5px; /* Rounded corners */
+    background-color: #1a1a1a; /* Dark background */
+    color: white; /* White text color */
+}
+
+#filters-container label {
+    color: white; /* White text for labels inside dark boxes */
+    font-size: 14px;
+    cursor: pointer;
+    display: flex; /* Align checkbox and text */
+    align-items: center;
+}
+
+#filters-container input[type="checkbox"] {
+    margin-right: 10px;
+    /* Basic styling for checkbox size */
+    width: 18px; /* Increase checkbox size */
+    height: 18px; /* Increase checkbox size */
+    accent-color: #1a1a1a; /* Dark accent color for checkbox */
+}
+
+#filters-container input[type="range"] {
+    -webkit-appearance: none; /* Override default appearance */
+    appearance: none;
+    width: 100%;
+    height: 8px; /* Thicker track */
+    background: #333; /* Dark grey track */
+    outline: none;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+    border-radius: 5px;
+}
+
+#filters-container input[type="range"]:hover {
+    opacity: 1;
+}
+
+#filters-container input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; /* Override default appearance */
+    appearance: none;
+    width: 20px; /* Thumb size */
+    height: 20px; /* Thumb size */
+    background: #fff; /* White thumb color */
+    cursor: pointer;
+    border-radius: 50%; /* Round thumb */
+    border: 2px solid #333; /* Dark border */
+    margin-top: -6px; /* Adjust to center thumb vertically on track */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+#filters-container input[type="range"]::-moz-range-thumb {
+    width: 20px; /* Thumb size */
+    height: 20px; /* Thumb size */
+    background: #fff; /* White thumb color */
+    cursor: pointer;
+    border-radius: 50%; /* Round thumb */
+    border: 2px solid #333; /* Dark border */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+#price-value {
+    margin-left: 10px;
+    font-weight: bold;
+    color: white; /* White color for price value inside dark box */
+}
+
+/* Удаляем стили для кнопки переключения боковой панели */
+/* Удаляем стили для класса expanded */
+
+/* Медиа-запросы для адаптации под мобильные устройства */
+@media screen and (max-width: 768px) {
+    .container {
+        flex-direction: column;
+    }
+
+    .sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+        transform: none;
+        padding: 20px;
+        border-radius: 0;
+    }
+
+    .sidebar:hover,
+    .sidebar:focus-within {
+        transform: none;
+    }
+
+    .logo,
+    .nav-links {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .main-content {
+        margin-left: 0;
+        padding: 15px;
+    }
+
+    .sidebar:hover ~ .main-content,
+    .sidebar:focus-within ~ .main-content {
+        margin-left: 0;
+    }
+
+    .products-grid {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+        padding: 10px;
+    }
+
+    .product-image {
+        height: 150px;
+    }
+
+    .product-info {
+        padding: 15px;
+    }
+
+    .product-info h3 {
+        font-size: 16px;
+    }
+
+    .product-info p {
+        font-size: 12px;
+    }
+
+    .characteristics-filter {
+        max-width: 100%;
+    }
+
+    header h1 {
+        font-size: 24px;
+    }
+
+    header p {
+        font-size: 16px;
+    }
+}
+
+/* Дополнительные стили для очень маленьких экранов */
+@media screen and (max-width: 480px) {
+    .products-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .product-card {
+        max-width: 100%;
+    }
+
+    .nav-links a {
+        padding: 8px;
+    }
+
+    .nav-links a i {
+        margin-right: 8px;
+    }
+}
+
+/* Стили для модальных окон */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    overflow-y: auto;
+}
+
+.modal-content {
+    background-color: #fff;
+    margin: 50px auto;
+    padding: 30px;
+    border-radius: 10px;
+    max-width: 500px;
+    position: relative;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.close {
+    position: absolute;
+    right: 20px;
+    top: 15px;
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+}
+
+.close:hover {
+    color: #333;
+}
+
+/* Стили для форм */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #333;
+    font-weight: 500;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+    transition: border-color 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    border-color: #1a1a1a;
+    outline: none;
+}
+
+.submit-btn {
+    background-color: #1a1a1a;
+    color: white;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    width: 100%;
+    transition: background-color 0.3s ease;
+}
+
+.submit-btn:hover {
+    background-color: #333;
+}
+
+/* Стили для селектора размера и кнопки заказа */
+.size-selector {
+    margin: 15px 0;
+}
+
+.size-select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+
+.order-btn {
+    background-color: #1a1a1a;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    width: 100%;
+    transition: background-color 0.3s ease;
+}
+
+.order-btn:hover {
+    background-color: #333;
+}
+
+/* Адаптивные стили для модальных окон */
+@media screen and (max-width: 768px) {
+    .modal-content {
+        margin: 20px;
+        padding: 20px;
+    }
+
+    .form-group input,
+    .form-group select {
+        padding: 10px;
+        font-size: 14px;
+    }
+
+    .submit-btn {
+        padding: 10px 20px;
+        font-size: 14px;
+    }
+}
+
+/* Анимации для модальных окон */
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-content {
+    animation: modalFadeIn 0.3s ease-out;
+} 
