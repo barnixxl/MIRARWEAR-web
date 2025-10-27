@@ -317,6 +317,52 @@
             <div style="margin-bottom: 15px;">
                 <button onclick="openProductModal()" class="btn btn-primary"><i class="fas fa-plus"></i> Добавить товар</button>
             </div>
+            
+            <!-- Фильтры для товаров -->
+            <div class="product-filters" style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                <h4 style="margin-bottom: 15px;">Фильтры товаров:</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                    <div class="filter-group">
+                        <label>Категория:</label>
+                        <select id="filterCategory" onchange="applyProductFilters()">
+                            <option value="">Все категории</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Цена:</label>
+                        <select id="filterPrice" onchange="applyProductFilters()">
+                            <option value="">Любая цена</option>
+                            <option value="asc">Сначала дешевые</option>
+                            <option value="desc">Сначала дорогие</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Количество:</label>
+                        <select id="filterQuantity" onchange="applyProductFilters()">
+                            <option value="">Любое количество</option>
+                            <option value="asc">Сначала меньше</option>
+                            <option value="desc">Сначала больше</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Размеры:</label>
+                        <select id="filterSizes" onchange="applyProductFilters()">
+                            <option value="">Все размеры</option>
+                            <option value="one-size">Единый размер</option>
+                            <option value="S">Размер S</option>
+                            <option value="M">Размер M</option>
+                            <option value="L">Размер L</option>
+                            <option value="XL">Размер XL</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="margin-top: 15px;">
+                    <button onclick="resetProductFilters()" class="btn btn-warning">
+                        <i class="fas fa-undo"></i> Сбросить фильтры
+                    </button>
+                </div>
+            </div>
+            
             <div id="productsTable"></div>
         </div>
 

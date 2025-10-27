@@ -418,14 +418,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const hasOneSize = !!p.oneSize;
             const hasSizes = !hasOneSize && enabledSizes.length > 0;
-            const sizeSelectHtml = hasOneSize ? `
-                <div class="size-selector"><span>Единый размер</span></div>
+            const sizeDisplayHtml = hasOneSize ? `
+                <div class="product-size">
+                    <span class="size-label">Размеры:</span>
+                    <span class="size-value">Единый размер</span>
+                </div>
             ` : (hasSizes ? `
-                <div class="size-selector">
-                    <select class="size-select">
-                        <option value="">Выберите размер</option>
-                        ${enabledSizes.map(s => `<option value="${s}">${s}</option>`).join('')}
-                    </select>
+                <div class="product-size">
+                    <span class="size-label">Размеры:</span>
+                    <span class="size-value">${enabledSizes.join(', ')}</span>
                 </div>
             ` : '');
 
@@ -445,7 +446,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="product-info">
                         <h3>${p.name}</h3>
                         <p style="margin:8px 0;font-weight:600;">${priceLabel}</p>
-                        ${sizeSelectHtml}
+                        ${sizeDisplayHtml}
                         <button class="order-btn">Заказать</button>
                     </div>
                 </div>

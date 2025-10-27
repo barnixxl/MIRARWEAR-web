@@ -272,6 +272,13 @@ function loadAdmins() {
     try {
         const admins = window.authSystem.getAdmins();
         const adminsTable = document.getElementById('adminsTable');
+        const addAdminBtn = document.querySelector('button[onclick="openAddAdminModal()"]');
+        
+        // Показываем кнопку добавления админа только для главного админа
+        if (addAdminBtn) {
+            const isMainAdmin = window.authSystem.isMainAdmin();
+            addAdminBtn.style.display = isMainAdmin ? 'inline-block' : 'none';
+        }
         
         if (admins.length > 0) {
             adminsTable.innerHTML = `
@@ -281,6 +288,7 @@ function loadAdmins() {
                             <th>ID</th>
                             <th>Имя</th>
                             <th>Email</th>
+                            <th>Роль</th>
                             <th>Создан</th>
                             <th>Создал</th>
                             <th>Действия</th>
@@ -292,10 +300,13 @@ function loadAdmins() {
                                 <td>${admin.id.substring(0, 8)}...</td>
                                 <td>${admin.name}</td>
                                 <td>${admin.email}</td>
+                                <td>${admin.isMainAdmin || admin.email === '1238355@gmail.com' ? 'Главный админ' : 'Админ'}</td>
                                 <td>${new Date(admin.createdDate).toLocaleDateString()}</td>
                                 <td>${admin.createdBy ? admin.createdBy.substring(0, 8) + '...' : 'Система'}</td>
                                 <td>
-                                    <button onclick="deleteAdmin('${admin.id}')" class="btn btn-danger"><i class='fas fa-trash'></i> Удалить</button>
+                                    ${(admin.isMainAdmin || admin.email === '1238355@gmail.com') 
+                                        ? '<span style="color: #666;">Нельзя удалить</span>' 
+                                        : `<button onclick="deleteAdmin('${admin.id}')" class="btn btn-danger"><i class='fas fa-trash'></i> Удалить</button>`}
                                 </td>
                             </tr>
                         `).join('')}
@@ -419,54 +430,155 @@ window.addEventListener('click', function(e) {
 });
 
 // ======= Управление товарами =======
+let filteredProducts = null; // Кэш отфильтрованных товаров
+
+// Загрузка категорий в фильтр товаров
+function loadCategoriesForFilter() {
+    try {
+        const categories = window.authSystem.getCategories();
+        const categorySelect = document.getElementById('filterCategory');
+        
+        if (!categorySelect) return;
+        
+        // Очищаем существующие опции (кроме первой)
+        categorySelect.innerHTML = '<option value="">Все категории</option>';
+        
+        // Добавляем актуальные категории
+        categories.forEach(category => {
+            const option = document.createElement('option');
+            option.value = category.key;
+            option.textContent = category.name;
+            categorySelect.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Ошибка при загрузке категорий для фильтра:', error);
+    }
+}
+
+// Применение фильтров к товарам
+function applyProductFilters() {
+    try {
+        const products = window.authSystem.getProducts();
+        const categoryFilter = document.getElementById('filterCategory').value;
+        const priceFilter = document.getElementById('filterPrice').value;
+        const quantityFilter = document.getElementById('filterQuantity').value;
+        const sizesFilter = document.getElementById('filterSizes').value;
+        
+        let filtered = [...products];
+        
+        // Фильтр по категории
+        if (categoryFilter) {
+            filtered = filtered.filter(p => p.category === categoryFilter);
+        }
+        
+        // Фильтр по размерам
+        if (sizesFilter) {
+            if (sizesFilter === 'one-size') {
+                filtered = filtered.filter(p => p.oneSize === true);
+            } else {
+                filtered = filtered.filter(p => 
+                    !p.oneSize && 
+                    p.sizes && 
+                    p.sizes[sizesFilter] && 
+                    p.sizes[sizesFilter].enabled
+                );
+            }
+        }
+        
+        // Сортировка по цене
+        if (priceFilter) {
+            filtered.sort((a, b) => {
+                return priceFilter === 'asc' ? a.price - b.price : b.price - a.price;
+            });
+        }
+        
+        // Сортировка по количеству
+        if (quantityFilter) {
+            filtered.sort((a, b) => {
+                return quantityFilter === 'asc' ? a.quantity - b.quantity : b.quantity - a.quantity;
+            });
+        }
+        
+        filteredProducts = filtered;
+        renderProductsTable(filtered);
+    } catch (error) {
+        console.error('Ошибка при применении фильтров:', error);
+        alert('Ошибка при применении фильтров: ' + error.message);
+    }
+}
+
+// Сброс фильтров
+function resetProductFilters() {
+    document.getElementById('filterCategory').value = '';
+    document.getElementById('filterPrice').value = '';
+    document.getElementById('filterQuantity').value = '';
+    document.getElementById('filterSizes').value = '';
+    filteredProducts = null;
+    loadProducts();
+}
+
+// Рендеринг таблицы товаров
+function renderProductsTable(products) {
+    const productsTable = document.getElementById('productsTable');
+
+    if (!productsTable) return;
+
+    if (products.length === 0) {
+        productsTable.innerHTML = '<p>Товары не найдены</p>';
+        return;
+    }
+
+    productsTable.innerHTML = `
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Картинка</th>
+                    <th>Название</th>
+                    <th>Категория</th>
+                    <th>Цена</th>
+                    <th>Кол-во</th>
+                    <th>Размеры</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${products.map(p => `
+                    <tr>
+                        <td>${(Array.isArray(p.images) && p.images.length)
+                            ? `<img src="${p.images[0]}" alt="${p.name}" style="width:60px;height:60px;object-fit:cover;border-radius:6px;" />`
+                            : (p.imageDataUrl
+                                ? `<img src="${p.imageDataUrl}" alt="${p.name}" style="width:60px;height:60px;object-fit:cover;border-radius:6px;" />`
+                                : '-')}
+                        </td>
+                        <td>${p.name}</td>
+                        <td>${getCategoryName(p.category)}</td>
+                        <td>${Number(p.price).toLocaleString('ru-RU', {style:'currency', currency:'RUB'})}</td>
+                        <td>${p.quantity}</td>
+                        <td>${renderSizes(p.sizes)}</td>
+                        <td>
+                            <button class="btn btn-warning" onclick="editProduct('${p.id}')"><i class="fas fa-edit"></i> Редактировать</button>
+                            <button class="btn btn-danger" onclick="deleteProductAdmin('${p.id}')"><i class="fas fa-trash"></i> Удалить</button>
+                        </td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    `;
+}
+
 function loadProducts() {
     try {
         const products = window.authSystem.getProducts();
-        const productsTable = document.getElementById('productsTable');
-
-        if (!productsTable) return;
-
-        if (products.length === 0) {
-            productsTable.innerHTML = '<p>Товары не найдены</p>';
-            return;
+        
+        // Загружаем категории для фильтра
+        loadCategoriesForFilter();
+        
+        // Если нет активных фильтров, показываем все товары
+        if (!filteredProducts) {
+            renderProductsTable(products);
+        } else {
+            renderProductsTable(filteredProducts);
         }
-
-        productsTable.innerHTML = `
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Картинка</th>
-                        <th>Название</th>
-                        <th>Категория</th>
-                        <th>Цена</th>
-                        <th>Кол-во</th>
-                        <th>Размеры</th>
-                        <th>Действия</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${products.map(p => `
-                        <tr>
-                            <td>${(Array.isArray(p.images) && p.images.length)
-                                ? `<img src="${p.images[0]}" alt="${p.name}" style="width:60px;height:60px;object-fit:cover;border-radius:6px;" />`
-                                : (p.imageDataUrl
-                                    ? `<img src="${p.imageDataUrl}" alt="${p.name}" style="width:60px;height:60px;object-fit:cover;border-radius:6px;" />`
-                                    : '-')}
-                            </td>
-                            <td>${p.name}</td>
-                            <td>${getCategoryName(p.category)}</td>
-                            <td>${Number(p.price).toLocaleString('ru-RU', {style:'currency', currency:'RUB'})}</td>
-                            <td>${p.quantity}</td>
-                            <td>${renderSizes(p.sizes)}</td>
-                            <td>
-                                <button class="btn btn-warning" onclick="editProduct('${p.id}')"><i class="fas fa-edit"></i> Редактировать</button>
-                                <button class="btn btn-danger" onclick="deleteProductAdmin('${p.id}')"><i class="fas fa-trash"></i> Удалить</button>
-                            </td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            </table>
-        `;
     } catch (error) {
         alert('Ошибка при загрузке товаров: ' + error.message);
     }
@@ -523,6 +635,9 @@ function loadCategoriesForProduct() {
             option.textContent = category.name;
             categorySelect.appendChild(option);
         });
+        
+        // Также обновляем фильтр категорий
+        loadCategoriesForFilter();
     } catch (error) {
         console.error('Ошибка при загрузке категорий:', error);
     }
@@ -837,6 +952,8 @@ document.getElementById('categoryForm').addEventListener('submit', function(e) {
         loadCategories();
         // Обновляем список товаров, чтобы показать изменения в категориях
         loadProducts();
+        // Сбрасываем фильтры, так как категории могли измениться
+        resetProductFilters();
     } catch (error) {
         alert('Ошибка при сохранении: ' + error.message);
     }

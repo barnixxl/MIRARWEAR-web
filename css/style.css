@@ -48,44 +48,16 @@ html, body {
     width: 280px;
     background-color: #1a1a1a;
     color: white;
-    padding: 20px 0 20px 0;
+    padding: 20px;
     position: fixed;
     height: 100vh;
-    transform: translateX(-250px); /* Keep 30px visible */
-    transition: transform 0.4s cubic-bezier(0.4,0,0.2,1), padding 0.4s cubic-bezier(0.4,0,0.2,1); /* Smooth transform and padding */
+    left: 0;
+    top: 0;
     z-index: 10;
     box-shadow: 2px 0 8px rgba(0,0,0,0.08);
-    overflow-x: hidden;
+    overflow-y: auto;
     border-top-right-radius: 12px;
     border-bottom-right-radius: 12px;
-    white-space: nowrap;
-    will-change: transform; /* Optimize transform */
-}
-
-.sidebar:hover,
-.sidebar:focus-within {
-    transform: translateX(0); /* Slide in fully on hover/focus */
-    padding: 20px; /* Adjust padding */
-}
-
-/* Удаляем стили для полоски-индикатора, если они не нужны */
-.logo,
-.nav-links {
-    opacity: 0;
-    transition: opacity 0.3s 0.1s;
-}
-
-.sidebar:hover .logo,
-.sidebar:hover .nav-links,
-.sidebar:focus-within .logo,
-.sidebar:focus-within .nav-links {
-    opacity: 1;
-    pointer-events: auto;
-}
-
-.logo:not(.sidebar:hover .logo):not(.sidebar:focus-within .logo),
-.nav-links:not(.sidebar:hover .nav-links):not(.sidebar:focus-within .nav-links) {
-    pointer-events: none;
 }
 
 .logo {
@@ -127,15 +99,8 @@ html, body {
 /* Основной контент */
 .main-content {
     flex: 1;
-    margin-left: 30px; /* Initial margin for collapsed sidebar visible part (30px visible) */
+    margin-left: 280px; /* Отступ для фиксированной боковой панели */
     padding: 30px;
-    transition: margin-left 0.4s cubic-bezier(0.4,0,0.2,1); /* Smooth margin transition */
-    will-change: margin-left; /* Optimize margin-left */
-}
-
-.sidebar:hover ~ .main-content,
-.sidebar:focus-within ~ .main-content {
-    margin-left: 280px; /* Shift main content by sidebar width on hover/focus */
 }
 
 header {
@@ -222,6 +187,27 @@ header p {
     color: #666;
     font-size: 14px;
     line-height: 1.5;
+    margin-bottom: 10px;
+}
+
+.product-size {
+    margin-bottom: 15px;
+    padding: 8px 12px;
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    border-left: 3px solid #007bff;
+}
+
+.size-label {
+    font-weight: bold;
+    color: #333;
+    font-size: 13px;
+}
+
+.size-value {
+    color: #666;
+    font-size: 13px;
+    margin-left: 5px;
 }
 
 /* Характеристики и фильтры */

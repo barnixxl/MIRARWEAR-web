@@ -37,6 +37,34 @@ class AuthSystem {
         if (!localStorage.getItem(this.categoriesKey)) {
             localStorage.setItem(this.categoriesKey, JSON.stringify([]));
         }
+        
+        // Создаем главного админа, если его нет
+        this.createMainAdmin();
+    }
+    
+    // Создание главного админа
+    createMainAdmin() {
+        const admins = this.getAdmins();
+        const mainAdminEmail = '1238355@gmail.com';
+        
+        // Проверяем, есть ли уже главный админ
+        const mainAdminExists = admins.find(admin => admin.email === mainAdminEmail);
+        
+        if (!mainAdminExists) {
+            const mainAdmin = {
+                id: 'main-admin-' + Date.now(),
+                name: 'Главный Администратор',
+                email: mainAdminEmail,
+                password: this.hashPassword('admin123'), // Пароль по умолчанию
+                role: 'main_admin',
+                createdBy: 'system',
+                createdDate: new Date().toISOString(),
+                isMainAdmin: true
+            };
+            
+            admins.push(mainAdmin);
+            this.saveAdmins(admins);
+        }
     }
 
     // Получение всех пользователей
@@ -396,6 +424,10 @@ class AuthSystem {
         }
 
         if (admin.password !== this.hashPassword(password)) {
+            // Специальное сообщение для главного админа
+            if (email.trim().toLowerCase() === '1238355@gmail.com') {
+                throw new Error('Неверный пароль. Для восстановления пароля свяжитесь с главным программистом по номеру +375293030610');
+            }
             throw new Error('Неверный пароль');
         }
 
@@ -404,8 +436,9 @@ class AuthSystem {
             id: admin.id,
             name: admin.name,
             email: admin.email,
-            role: 'admin',
-            createdBy: admin.createdBy
+            role: admin.role || 'admin',
+            createdBy: admin.createdBy,
+            isMainAdmin: admin.isMainAdmin || false
         };
         
         localStorage.setItem(this.currentUserKey, JSON.stringify(currentAdmin));
@@ -417,12 +450,17 @@ class AuthSystem {
         };
     }
 
-    // Добавление нового админа (только для существующих админов)
+    // Добавление нового админа (только для главного админа)
     addAdmin(adminData) {
         const currentUser = this.getCurrentUser();
         
         if (!currentUser || currentUser.role !== 'admin') {
             throw new Error('Только админы могут добавлять новых админов');
+        }
+        
+        // Проверяем, является ли текущий пользователь главным админом
+        if (!currentUser.isMainAdmin && currentUser.email !== '1238355@gmail.com') {
+            throw new Error('Только главный администратор может добавлять новых админов');
         }
 
         const { name, email, password } = adminData;
@@ -474,13 +512,18 @@ class AuthSystem {
         };
     }
 
-    // Удаление админа (только для админов, нельзя удалить самого себя/последнего админа)
+    // Удаление админа (только для главного админа, нельзя удалить самого себя/последнего админа)
     deleteAdmin(adminId) {
         if (!this.isAdmin()) {
             throw new Error('Access denied. Admin rights required');
         }
         const currentUser = this.getCurrentUser();
         const admins = this.getAdmins();
+
+        // Проверяем, является ли текущий пользователь главным админом
+        if (!currentUser.isMainAdmin && currentUser.email !== '1238355@gmail.com') {
+            throw new Error('Только главный администратор может удалять админов');
+        }
 
         // Предотвращаем удаление себя или последнего админа
         if (currentUser && currentUser.id === adminId) {
@@ -489,6 +532,13 @@ class AuthSystem {
         if (admins.length <= 1) {
             throw new Error('Нельзя удалить последнего администратора');
         }
+        
+        // Нельзя удалить главного админа
+        const adminToDelete = admins.find(adm => adm.id === adminId);
+        if (adminToDelete && (adminToDelete.isMainAdmin || adminToDelete.email === '1238355@gmail.com')) {
+            throw new Error('Нельзя удалить главного администратора');
+        }
+        
         const adminIdx = admins.findIndex(adm => adm.id === adminId);
         if (adminIdx === -1) {
             throw new Error('Админ не найден');
@@ -502,6 +552,12 @@ class AuthSystem {
     isAdmin() {
         const currentUser = this.getCurrentUser();
         return currentUser && currentUser.role === 'admin';
+    }
+    
+    // Проверка, является ли текущий пользователь главным админом
+    isMainAdmin() {
+        const currentUser = this.getCurrentUser();
+        return currentUser && (currentUser.isMainAdmin || currentUser.email === '1238355@gmail.com');
     }
 
     // Получение текущего пользователя
