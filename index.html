@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
+
 <body>
     <div class="container">
         <!-- Боковое меню -->
@@ -20,7 +22,8 @@
                 <li><a href="#contact"><i class="fas fa-envelope"></i> Контакты</a></li>
                 <li><a href="#" id="loginBtn"><i class="fas fa-user"></i> Войти</a></li>
                 <li><a href="#" id="registerBtn"><i class="fas fa-user-plus"></i> Регистрация</a></li>
-                <li><a href="admin.html" id="adminBtn" style="display: none;"><i class="fas fa-shield-alt"></i> Админ-панель</a></li>
+                <li><a href="admin.html" id="adminBtn" style="display: none;"><i class="fas fa-shield-alt"></i>
+                        Админ-панель</a></li>
             </ul>
         </nav>
 
@@ -28,15 +31,29 @@
         <main class="main-content">
             <header id="home">
                 <h1>Mirar wear</h1>
-                <p>сюда че нибудь напишу</p>
+                
             </header>
 
             <!-- Характеристики и фильтры -->
             <section class="characteristics-filter">
-                <button id="toggle-filters"><i class="fas fa-cogs"></i> Фильтры</button>
+                <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap; margin-bottom: 15px;">
+                    <button id="toggle-filters"><i class="fas fa-cogs"></i> Фильтры</button>
+
+                    <!-- Поиск товаров -->
+                    <div style="flex: 1; min-width: 250px; max-width: 500px; position: relative;">
+                        <i class="fas fa-search"
+                            style="position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: #667eea; font-size: 16px; z-index: 1;"></i>
+                        <input type="text" id="searchProductsUser" placeholder="🔍 Поиск товаров..."
+                            oninput="searchProductsUser()"
+                            style="width: 100%; padding: 12px 20px 12px 50px; border: 2px solid transparent; background: linear-gradient(white, white) padding-box, linear-gradient(135deg, #667eea 0%, #764ba2 100%) border-box; border-radius: 50px; font-size: 15px; box-shadow: 0 3px 10px rgba(102, 126, 234, 0.2); transition: all 0.3s ease; outline: none;"
+                            onfocus="this.style.boxShadow='0 5px 15px rgba(102, 126, 234, 0.3)'; this.style.transform='translateY(-1px)';"
+                            onblur="this.style.boxShadow='0 3px 10px rgba(102, 126, 234, 0.2)'; this.style.transform='translateY(0)';">
+                    </div>
+                </div>
+
                 <div id="filters-container" style="display: none;">
                     <h4>Выберите параметры:</h4>
-                    
+
                     <!-- Фильтр по категории -->
                     <div class="filter-group">
                         <label>Категория одежды:</label>
@@ -137,16 +154,77 @@
 
             <!-- Секция О нас -->
             <section id="about" style="display: none;">
-                <h2>О нас</h2>
-                <p>Здесь будет инфа о бренде.</p>
+                <div class="about-container">
+                    <h2>История Mirar Wear</h2>
+
+                    <div class="about-block">
+                        <div class="about-text">
+                            <h3>Начало пути</h3>
+                            <p>Бренд начал формироваться в начале 2022 года. Идея была такова, что в стране не хватает
+                                брендов, которые продают красивую модную одежду по приемлемым ценам.</p>
+                        </div>
+                        <div class="about-image">
+                            <img src="images/zipka.jpg" alt="Первые эскизы">
+                        </div>
+                    </div>
+
+                    <div class="about-block reverse">
+                        <div class="about-text">
+                            <h3>Философия</h3>
+                            <p>Суть была такова, что каждый человек может выразить свой внутренний мир через вещи и
+                                сделать это так, чтобы ему хватало средств на воплощение своего внутреннего мира.</p>
+                        </div>
+                        <div class="about-image">
+                            <img src="images/фон6.png" alt="Вдохновение">
+                        </div>
+                    </div>
+
+                    <div class="about-block">
+                        <div class="about-text">
+                            <h3>Подготовка</h3>
+                            <p>Целый год подготовки: поиск материалов, завода, эскизов и подгонка размеров. И в начале
+                                2023 года бренд Mirar Wear начинает свой путь.</p>
+                        </div>
+                        <div class="about-image">
+                            <img src="images/shtani.jpg" alt="Производство">
+                        </div>
+                    </div>
+
+                    <div class="about-block reverse">
+                        <div class="about-text">
+                            <h3>Успех</h3>
+                            <p>За 3 месяца бренд набирает популярность в Минске, а еще через 3 и по всей стране.
+                                Популярные артисты, медийные личности покупают вещи известного стрит-вир бренда.</p>
+                        </div>
+                        <div class="about-image">
+                            <img src="images/bag.jpg" alt="Популярность">
+                        </div>
+                    </div>
+                </div>
             </section>
 
             <!-- Секция Контакты -->
             <section id="contact" style="display: none;">
                 <h2>Контакты</h2>
-                <p>Здесь будет контактная инфа о бренде.</p>
+                <h3 style="color: rgb(0, 0, 0);">
+                Инстаграмм:  
+  <a href="https://www.instagram.com/mirarwear/?utm_source=ig_web_button_share_sheet" style="color: black;">
+    MirarWear.Inst
+  </a>
+</h3>
+
+<h3 style="color: rgb(0, 0, 0);">
+  Телеграмм: 
+  <a href="https://t.me/mirarwearfck" style="color: black">
+    MirarWear.Telegram
+  </a>
+</h3>
+
+        
             </section>
         </main>
+        <!-- Кнопка переключения темы -->
+        <button class="theme-toggle" id="themeToggle" title="Переключить тему">🌓</button>
     </div>
 
     <!-- Модальное окно входа -->
@@ -197,34 +275,45 @@
 
     <!-- Модальное окно оформления заказа -->
     <div id="orderModal" class="modal">
-        <div class="modal-content">
+        <div class="modal-content order-modal">
             <span class="close">&times;</span>
-            <h2>Оформление заказа</h2>
-            <form id="orderForm">
-                <div class="form-group">
-                    <label for="orderName">Имя:</label>
-                    <input type="text" id="orderName" required>
+            <div class="order-modal-body">
+                <div class="order-preview">
+                    <div class="order-preview-image">
+                        <button class="order-preview-nav" id="orderPreviewPrev"
+                            aria-label="Предыдущее фото">&#10094;</button>
+                        <img id="orderPreviewImg" src="images/placeholder.jpg" alt="Предпросмотр товара">
+                        <button class="order-preview-nav" id="orderPreviewNext"
+                            aria-label="Следующее фото">&#10095;</button>
+                    </div>
+                    <div class="order-preview-meta">
+                        <h3 id="orderPreviewName">Товар</h3>
+                        <p id="orderPreviewPrice">—</p>
+                        <p id="orderPreviewStock" class="order-preview-stock"></p>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="orderPhone">Телефон:</label>
-                    <input type="tel" id="orderPhone" required>
-                </div>
-                <div class="form-group">
-                    <label for="orderEmail">Email:</label>
-                    <input type="email" id="orderEmail" required>
-                </div>
-                <div class="form-group">
-                    <label for="orderSize">Размер:</label>
-                    <select id="orderSize" required>
-                        <option value="">Выберите размер</option>
-                        <option value="S">S</option>
-                        <option value="M">M</option>
-                        <option value="L">L</option>
-                        <option value="XL">XL</option>
-                    </select>
-                </div>
-                <button type="submit" class="submit-btn">Подтвердить заказ</button>
-            </form>
+                <form id="orderForm">
+                    <div class="form-group">
+                        <label for="orderName">Имя:</label>
+                        <input type="text" id="orderName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="orderPhone">Телефон:</label>
+                        <input type="tel" id="orderPhone" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="orderEmail">Email:</label>
+                        <input type="email" id="orderEmail" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="orderSize">Размер:</label>
+                        <select id="orderSize" required>
+                            <option value="">Выберите размер</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="submit-btn big-btn">Подтвердить заказ</button>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -232,8 +321,21 @@
     <script defer src="js/init-categories.js"></script>
     <script defer src="js/init-products.js"></script>
     <script defer src="js/main.js"></script>
+    <script>
+        // Переопределяем обработку клика на карточку товара и отключаем openProductDetail
+        if (window.addEventListener) {
+            window.addEventListener('DOMContentLoaded', function () {
+                document.querySelectorAll('.product-card').forEach(el => {
+                    el.onclick = function (e) {
+                        // Игнорировать клик по кнопке заказа
+                        if (e.target.closest('.order-btn')) return;
+                        const id = el.getAttribute('data-product-id');
+                        window.location.href = 'product.html?id=' + encodeURIComponent(id);
+                    };
+                });
+            });
+        }
+    </script>
 </body>
-</html> 
 
-
-
+</html>

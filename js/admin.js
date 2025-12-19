@@ -4,17 +4,17 @@ let currentOrderId = null;
 let currentProductId = null;
 
 // Проверка авторизации админа при загрузке страницы
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     if (!window.authSystem.isAdmin()) {
         alert('Доступ запрещен. Требуются права администратора.');
         window.location.href = 'index.html';
         return;
     }
-    
+
     // Обновляем информацию об админе
     const currentAdmin = window.authSystem.getCurrentUser();
     document.getElementById('adminInfo').textContent = `Добро пожаловать, ${currentAdmin.name}!`;
-    
+
     // Загружаем дашборд
     loadDashboard();
 
@@ -39,18 +39,18 @@ function showSection(sectionName) {
     document.querySelectorAll('.admin-section').forEach(section => {
         section.classList.remove('active');
     });
-    
+
     // Убираем активный класс у всех кнопок навигации
     document.querySelectorAll('.admin-nav button').forEach(btn => {
         btn.classList.remove('active');
     });
-    
+
     // Показываем нужную секцию
     document.getElementById(sectionName).classList.add('active');
     document.getElementById(`nav-${sectionName}`).classList.add('active');
-    
+
     // Загружаем данные для секции
-    switch(sectionName) {
+    switch (sectionName) {
         case 'dashboard':
             loadDashboard();
             break;
@@ -76,7 +76,12 @@ function showSection(sectionName) {
 function loadDashboard() {
     try {
         const stats = window.authSystem.getStatistics();
-        
+        const products = window.authSystem.getProducts();
+        const getProductName = (id) => {
+            const p = products.find(x => x.id === id);
+            return p ? p.name : `Товар ${id}`;
+        };
+
         // Обновляем статистику
         const statsGrid = document.getElementById('statsGrid');
         statsGrid.innerHTML = `
@@ -97,16 +102,18 @@ function loadDashboard() {
                 <div class="number">${stats.orderStats['Новый'] || 0}</div>
             </div>
         `;
-        
+
         // Показываем последние заказы
         const recentOrdersDiv = document.getElementById('recentOrders');
         if (stats.recentOrders.length > 0) {
             recentOrdersDiv.innerHTML = `
+                <div class="table-responsive">
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th>ID</th>
+                            <th>ID заказа</th>
                             <th>Клиент</th>
+                            <th>Email</th>
                             <th>Товар</th>
                             <th>Статус</th>
                             <th>Дата</th>
@@ -115,49 +122,22 @@ function loadDashboard() {
                     <tbody>
                         ${stats.recentOrders.map(order => `
                             <tr>
-                                <td>${order.id.substring(0, 8)}...</td>
+                                <td>${order.id}</td>
                                 <td>${order.customerName}</td>
-                                <td>Товар ${order.productId}</td>
+                                <td>${order.customerEmail}</td>
+                                <td>${getProductName(order.productId)}</td>
                                 <td><span class="status-badge status-${order.status.toLowerCase().replace(' ', '')}">${order.status}</span></td>
                                 <td>${new Date(order.orderDate).toLocaleDateString()}</td>
                             </tr>
                         `).join('')}
                     </tbody>
                 </table>
+                </div>
             `;
         } else {
             recentOrdersDiv.innerHTML = '<p>Нет заказов</p>';
         }
-        
-        // Показываем новых пользователей
-        const recentUsersDiv = document.getElementById('recentUsers');
-        if (stats.recentUsers.length > 0) {
-            recentUsersDiv.innerHTML = `
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Имя</th>
-                            <th>Email</th>
-                            <th>Телефон</th>
-                            <th>Дата регистрации</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${stats.recentUsers.map(user => `
-                            <tr>
-                                <td>${user.name}</td>
-                                <td>${user.email}</td>
-                                <td>${user.phone}</td>
-                                <td>${new Date(user.registrationDate).toLocaleDateString()}</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            `;
-        } else {
-            recentUsersDiv.innerHTML = '<p>Нет пользователей</p>';
-        }
-        
+
     } catch (error) {
         console.error('Ошибка при загрузке дашборда:', error);
         alert('Ошибка при загрузке данных: ' + error.message);
@@ -169,9 +149,10 @@ function loadUsers() {
     try {
         const users = window.authSystem.getAllUsers();
         const usersTable = document.getElementById('usersTable');
-        
+
         if (users.length > 0) {
             usersTable.innerHTML = `
+                <div class="table-responsive">
                 <table class="data-table">
                     <thead>
                         <tr>
@@ -200,11 +181,12 @@ function loadUsers() {
                         `).join('')}
                     </tbody>
                 </table>
+                </div>
             `;
         } else {
             usersTable.innerHTML = '<p>Пользователи не найдены</p>';
         }
-        
+
     } catch (error) {
         console.error('Ошибка при загрузке пользователей:', error);
         alert('Ошибка при загрузке пользователей: ' + error.message);
@@ -214,15 +196,24 @@ function loadUsers() {
 // Загрузка заказов
 function loadOrders() {
     try {
-        const orders = window.authSystem.getAllOrders();
+        let orders = window.authSystem.getAllOrders();
+        const products = window.authSystem.getProducts();
+        const getProductName = (id) => {
+            const p = products.find(x => x.id === id);
+            return p ? p.name : `Товар ${id}`;
+        };
         const ordersTable = document.getElementById('ordersTable');
-        
+
+        // Сортировка по дате (последние сверху)
+        orders = orders.slice().sort((a, b) => new Date(b.orderDate) - new Date(a.orderDate));
+
         if (orders.length > 0) {
             ordersTable.innerHTML = `
+                <div class="table-responsive">
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th>ID</th>
+                            <th>ID заказа</th>
                             <th>Клиент</th>
                             <th>Email</th>
                             <th>Телефон</th>
@@ -236,17 +227,17 @@ function loadOrders() {
                     <tbody>
                         ${orders.map(order => `
                             <tr>
-                                <td>${order.id.substring(0, 8)}...</td>
+                                <td>${order.id}</td>
                                 <td>${order.customerName}</td>
                                 <td>${order.customerEmail}</td>
                                 <td>${order.customerPhone}</td>
-                                <td>Товар ${order.productId}</td>
+                                <td>${getProductName(order.productId)}</td>
                                 <td>${order.size}</td>
                                 <td><span class="status-badge status-${order.status.toLowerCase().replace(' ', '')}">${order.status}</span></td>
                                 <td>${new Date(order.orderDate).toLocaleDateString()}</td>
                                 <td>
-                                    <button onclick="openOrderStatusModal('${order.id}')" class="btn btn-warning">
-                                        <i class="fas fa-edit"></i> Статус
+                                    <button onclick="sendEmailToCustomer('${order.id}')" class="btn btn-warning">
+                                        <i class="fas fa-envelope"></i> Отправить сообщение
                                     </button>
                                     <button onclick="deleteOrder('${order.id}')" class="btn btn-danger">
                                         <i class="fas fa-trash"></i> Удалить
@@ -256,11 +247,12 @@ function loadOrders() {
                         `).join('')}
                     </tbody>
                 </table>
+                </div>
             `;
         } else {
             ordersTable.innerHTML = '<p>Заказы не найдены</p>';
         }
-        
+
     } catch (error) {
         console.error('Ошибка при загрузке заказов:', error);
         alert('Ошибка при загрузке заказов: ' + error.message);
@@ -273,15 +265,16 @@ function loadAdmins() {
         const admins = window.authSystem.getAdmins();
         const adminsTable = document.getElementById('adminsTable');
         const addAdminBtn = document.querySelector('button[onclick="openAddAdminModal()"]');
-        
+
         // Показываем кнопку добавления админа только для главного админа
         if (addAdminBtn) {
             const isMainAdmin = window.authSystem.isMainAdmin();
             addAdminBtn.style.display = isMainAdmin ? 'inline-block' : 'none';
         }
-        
+
         if (admins.length > 0) {
             adminsTable.innerHTML = `
+                <div class="table-responsive">
                 <table class="data-table">
                     <thead>
                         <tr>
@@ -304,19 +297,20 @@ function loadAdmins() {
                                 <td>${new Date(admin.createdDate).toLocaleDateString()}</td>
                                 <td>${admin.createdBy ? admin.createdBy.substring(0, 8) + '...' : 'Система'}</td>
                                 <td>
-                                    ${(admin.isMainAdmin || admin.email === '1238355@gmail.com') 
-                                        ? '<span style="color: #666;">Нельзя удалить</span>' 
-                                        : `<button onclick="deleteAdmin('${admin.id}')" class="btn btn-danger"><i class='fas fa-trash'></i> Удалить</button>`}
+                                    ${(admin.isMainAdmin || admin.email === '1238355@gmail.com')
+                    ? '<span style="color: #666;">Нельзя удалить</span>'
+                    : `<button onclick="deleteAdmin('${admin.id}')" class="btn btn-danger"><i class='fas fa-trash'></i> Удалить</button>`}
                                 </td>
                             </tr>
                         `).join('')}
                     </tbody>
                 </table>
+                </div>
             `;
         } else {
             adminsTable.innerHTML = '<p>Админы не найдены</p>';
         }
-        
+
     } catch (error) {
         console.error('Ошибка при загрузке админов:', error);
         alert('Ошибка при загрузке админов: ' + error.message);
@@ -349,39 +343,46 @@ function deleteOrder(orderId) {
     }
 }
 
-// Открытие модального окна изменения статуса заказа
-function openOrderStatusModal(orderId) {
-    currentOrderId = orderId;
-    document.getElementById('orderStatusModal').style.display = 'block';
-}
-
-// Закрытие модального окна изменения статуса заказа
-function closeOrderStatusModal() {
-    document.getElementById('orderStatusModal').style.display = 'none';
-    currentOrderId = null;
-}
-
-// Обработка формы изменения статуса заказа
-document.getElementById('orderStatusForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    if (!currentOrderId) {
-        alert('Ошибка: ID заказа не найден');
-        return;
-    }
-    
-    const newStatus = document.getElementById('newStatus').value;
-    
+// Подготовка письма клиенту в Gmail (или почтовом клиенте)
+function sendEmailToCustomer(orderId) {
     try {
-        const result = window.authSystem.updateOrderStatus(currentOrderId, newStatus);
-        alert(result.message);
-        closeOrderStatusModal();
-        loadOrders();
-        loadDashboard(); // Обновляем дашборд
+        const orders = window.authSystem.getAllOrders();
+        const products = window.authSystem.getProducts();
+        const order = orders.find(o => o.id === orderId);
+        if (!order) {
+            alert('Заказ не найден');
+            return;
+        }
+        const product = products.find(p => p.id === order.productId);
+        const productName = product ? product.name : `Товар ${order.productId}`;
+        const productPrice = product ? (Number(product.price).toLocaleString('ru-RU', { style: 'currency', currency: 'RUB' })) : '-';
+        // ВАЖНО: не вставляем data:image/base64 в тело письма, т.к. это делает URL слишком длинным
+        // и Gmail может возвращать 400 Bad Request. Достаточно текста с названием и ценой.
+        const subject = encodeURIComponent(`Заказ ${order.id} — Mirar Wear`);
+
+        let bodyContent =
+            `Здравствуйте, ${order.customerName}!\n\n` +
+            `Вы оформили заказ в Mirar Wear.\n` +
+            `ID заказа: ${order.id}\n` +
+            `Товар: ${productName}\n` +
+            `Цена: ${productPrice}\n` +
+            `Размер: ${order.size || '-'}\n` +
+            `Дата: ${new Date(order.orderDate).toLocaleString('ru-RU')}\n\n` +
+            `Для связи с администратором писать в телеграм @mirarmanager\n` +
+            `Предоставьте ему свой айди ${order.id} заказа для оформления\n` +
+            `Если у вас есть вопросы, ответьте на это письмо.`;
+        const body = encodeURIComponent(bodyContent);
+        const to = encodeURIComponent(order.customerEmail);
+        const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${to}&su=${subject}&body=${body}`;
+        const mailtoUrl = `mailto:${order.customerEmail}?subject=${subject}&body=${body}`;
+        const win = window.open(gmailUrl, '_blank');
+        if (!win) {
+            window.location.href = mailtoUrl;
+        }
     } catch (error) {
-        alert('Ошибка при обновлении статуса: ' + error.message);
+        alert('Не удалось подготовить письмо: ' + (error.message || error));
     }
-});
+}
 
 // Открытие модального окна добавления админа
 function openAddAdminModal() {
@@ -395,15 +396,15 @@ function closeAddAdminModal() {
 }
 
 // Обработка формы добавления админа
-document.getElementById('addAdminForm').addEventListener('submit', function(e) {
+document.getElementById('addAdminForm').addEventListener('submit', function (e) {
     e.preventDefault();
-    
+
     const adminData = {
         name: document.getElementById('adminName').value,
         email: document.getElementById('adminEmail').value,
         password: document.getElementById('adminPassword').value
     };
-    
+
     try {
         const result = window.authSystem.addAdmin(adminData);
         alert(result.message);
@@ -423,7 +424,7 @@ function logout() {
 }
 
 // Закрытие модальных окон при клике вне их
-window.addEventListener('click', function(e) {
+window.addEventListener('click', function (e) {
     if (e.target.classList.contains('modal')) {
         e.target.style.display = 'none';
     }
@@ -431,18 +432,19 @@ window.addEventListener('click', function(e) {
 
 // ======= Управление товарами =======
 let filteredProducts = null; // Кэш отфильтрованных товаров
+let currentSearchTerm = ''; // Текущий поисковый запрос
 
 // Загрузка категорий в фильтр товаров
 function loadCategoriesForFilter() {
     try {
         const categories = window.authSystem.getCategories();
         const categorySelect = document.getElementById('filterCategory');
-        
+
         if (!categorySelect) return;
-        
+
         // Очищаем существующие опции (кроме первой)
         categorySelect.innerHTML = '<option value="">Все категории</option>';
-        
+
         // Добавляем актуальные категории
         categories.forEach(category => {
             const option = document.createElement('option');
@@ -455,6 +457,15 @@ function loadCategoriesForFilter() {
     }
 }
 
+// Поиск товаров по названию
+function searchProducts() {
+    const searchInput = document.getElementById('searchProducts');
+    if (!searchInput) return;
+
+    currentSearchTerm = searchInput.value.toLowerCase().trim();
+    applyProductFilters();
+}
+
 // Применение фильтров к товарам
 function applyProductFilters() {
     try {
@@ -463,42 +474,49 @@ function applyProductFilters() {
         const priceFilter = document.getElementById('filterPrice').value;
         const quantityFilter = document.getElementById('filterQuantity').value;
         const sizesFilter = document.getElementById('filterSizes').value;
-        
+
         let filtered = [...products];
-        
+
+        // Фильтр по поисковому запросу
+        if (currentSearchTerm) {
+            filtered = filtered.filter(p =>
+                p.name.toLowerCase().includes(currentSearchTerm)
+            );
+        }
+
         // Фильтр по категории
         if (categoryFilter) {
             filtered = filtered.filter(p => p.category === categoryFilter);
         }
-        
+
         // Фильтр по размерам
         if (sizesFilter) {
             if (sizesFilter === 'one-size') {
                 filtered = filtered.filter(p => p.oneSize === true);
             } else {
-                filtered = filtered.filter(p => 
-                    !p.oneSize && 
-                    p.sizes && 
-                    p.sizes[sizesFilter] && 
+                filtered = filtered.filter(p =>
+                    !p.oneSize &&
+                    p.sizes &&
+                    p.sizes[sizesFilter] &&
                     p.sizes[sizesFilter].enabled
                 );
             }
         }
-        
+
         // Сортировка по цене
         if (priceFilter) {
             filtered.sort((a, b) => {
                 return priceFilter === 'asc' ? a.price - b.price : b.price - a.price;
             });
         }
-        
+
         // Сортировка по количеству
         if (quantityFilter) {
             filtered.sort((a, b) => {
                 return quantityFilter === 'asc' ? a.quantity - b.quantity : b.quantity - a.quantity;
             });
         }
-        
+
         filteredProducts = filtered;
         renderProductsTable(filtered);
     } catch (error) {
@@ -513,6 +531,11 @@ function resetProductFilters() {
     document.getElementById('filterPrice').value = '';
     document.getElementById('filterQuantity').value = '';
     document.getElementById('filterSizes').value = '';
+    const searchInput = document.getElementById('searchProducts');
+    if (searchInput) {
+        searchInput.value = '';
+    }
+    currentSearchTerm = '';
     filteredProducts = null;
     loadProducts();
 }
@@ -529,6 +552,7 @@ function renderProductsTable(products) {
     }
 
     productsTable.innerHTML = `
+        <div class="table-responsive">
         <table class="data-table">
             <thead>
                 <tr>
@@ -545,14 +569,14 @@ function renderProductsTable(products) {
                 ${products.map(p => `
                     <tr>
                         <td>${(Array.isArray(p.images) && p.images.length)
-                            ? `<img src="${p.images[0]}" alt="${p.name}" style="width:60px;height:60px;object-fit:cover;border-radius:6px;" />`
-                            : (p.imageDataUrl
-                                ? `<img src="${p.imageDataUrl}" alt="${p.name}" style="width:60px;height:60px;object-fit:cover;border-radius:6px;" />`
-                                : '-')}
+            ? `<img src="${p.images[0]}" alt="${p.name}" style="width:60px;height:60px;object-fit:cover;border-radius:6px;" />`
+            : (p.imageDataUrl
+                ? `<img src="${p.imageDataUrl}" alt="${p.name}" style="width:60px;height:60px;object-fit:cover;border-radius:6px;" />`
+                : '-')}
                         </td>
                         <td>${p.name}</td>
                         <td>${getCategoryName(p.category)}</td>
-                        <td>${Number(p.price).toLocaleString('ru-RU', {style:'currency', currency:'RUB'})}</td>
+                        <td>${Number(p.price).toLocaleString('ru-RU', { style: 'currency', currency: 'RUB' })}</td>
                         <td>${p.quantity}</td>
                         <td>${renderSizes(p.sizes)}</td>
                         <td>
@@ -563,16 +587,17 @@ function renderProductsTable(products) {
                 `).join('')}
             </tbody>
         </table>
+        </div>
     `;
 }
 
 function loadProducts() {
     try {
         const products = window.authSystem.getProducts();
-        
+
         // Загружаем категории для фильтра
         loadCategoriesForFilter();
-        
+
         // Если нет активных фильтров, показываем все товары
         if (!filteredProducts) {
             renderProductsTable(products);
@@ -602,7 +627,7 @@ function getCategoryName(category) {
     } catch (error) {
         console.error('Ошибка при получении названия категории:', error);
     }
-    
+
     // Fallback на старые названия, если категория не найдена
     const categoryNames = {
         'hat': 'Шапка',
@@ -622,12 +647,12 @@ function loadCategoriesForProduct() {
     try {
         const categories = window.authSystem.getCategories();
         const categorySelect = document.getElementById('productCategory');
-        
+
         if (!categorySelect) return;
-        
+
         // Очищаем существующие опции (кроме первой)
         categorySelect.innerHTML = '<option value="">Выберите категорию</option>';
-        
+
         // Добавляем актуальные категории
         categories.forEach(category => {
             const option = document.createElement('option');
@@ -635,7 +660,7 @@ function loadCategoriesForProduct() {
             option.textContent = category.name;
             categorySelect.appendChild(option);
         });
-        
+
         // Также обновляем фильтр категорий
         loadCategoriesForFilter();
     } catch (error) {
@@ -648,14 +673,14 @@ function openProductModal() {
     document.getElementById('productModalTitle').textContent = 'Добавить товар';
     document.getElementById('productForm').reset();
     // По умолчанию включим все размеры
-    setSizeCheckboxes({ S:true, M:true, L:true, XL:true });
+    setSizeCheckboxes({ S: true, M: true, L: true, XL: true });
     const oneSizeCb = document.getElementById('oneSize');
     if (oneSizeCb) oneSizeCb.checked = false;
     toggleSizesDisabled(false);
-    
+
     // Загружаем актуальные категории
     loadCategoriesForProduct();
-    
+
     document.getElementById('productModal').style.display = 'block';
 }
 
@@ -678,6 +703,7 @@ function editProduct(productId) {
         document.getElementById('productId').value = product.id;
         document.getElementById('productName').value = product.name;
         document.getElementById('productDescription').value = product.description || '';
+        document.getElementById('productDescriptionFull').value = product.descriptionFull || '';
         document.getElementById('productPrice').value = product.price;
         document.getElementById('productQuantity').value = product.quantity;
         const oneSizeCb = document.getElementById('oneSize');
@@ -692,7 +718,7 @@ function editProduct(productId) {
 
         // Загружаем актуальные категории
         loadCategoriesForProduct();
-        
+
         // Устанавливаем категорию товара после загрузки категорий
         setTimeout(() => {
             document.getElementById('productCategory').value = product.category || '';
@@ -716,7 +742,7 @@ function setSizeCheckboxes(map) {
 }
 
 function toggleSizesDisabled(disabled) {
-    ['sizeS','sizeM','sizeL','sizeXL'].forEach(id => {
+    ['sizeS', 'sizeM', 'sizeL', 'sizeXL'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.disabled = !!disabled;
     });
@@ -728,6 +754,7 @@ function onSubmitProductForm(e) {
         const id = document.getElementById('productId').value || null;
         const name = document.getElementById('productName').value;
         const description = document.getElementById('productDescription').value;
+        const descriptionFull = document.getElementById('productDescriptionFull') ? document.getElementById('productDescriptionFull').value : '';
         const category = document.getElementById('productCategory').value;
         const price = document.getElementById('productPrice').value;
         const quantity = document.getElementById('productQuantity').value;
@@ -736,7 +763,7 @@ function onSubmitProductForm(e) {
             S: { enabled: document.getElementById('sizeS').checked },
             M: { enabled: document.getElementById('sizeM').checked },
             L: { enabled: document.getElementById('sizeL').checked },
-            XL:{ enabled: document.getElementById('sizeXL').checked }
+            XL: { enabled: document.getElementById('sizeXL').checked }
         };
 
         const imagesInput = document.getElementById('productImages');
@@ -770,24 +797,24 @@ function onSubmitProductForm(e) {
                 reader.onerror = () => reject(new Error('Не удалось прочитать файл изображения'));
                 reader.readAsDataURL(file);
             }))).then(images => {
-                saveProduct({ id, name, description, category, price: priceNum, quantity: qtyNum, sizes, oneSize, images });
+                saveProduct({ id, name, description, descriptionFull, category, price: priceNum, quantity: qtyNum, sizes, oneSize, images });
             }).catch(err => {
                 alert('Ошибка при чтении изображений: ' + err.message);
             });
         } else {
             // Без изменения изображений
-            saveProduct({ id, name, description, category, price: priceNum, quantity: qtyNum, sizes, oneSize });
+            saveProduct({ id, name, description, descriptionFull, category, price: priceNum, quantity: qtyNum, sizes, oneSize });
         }
     } catch (error) {
         alert('Ошибка при сохранении товара: ' + error.message);
     }
 }
 
-function saveProduct({ id, name, description, category, price, quantity, sizes, oneSize, images, imageDataUrl }) {
+function saveProduct({ id, name, description, descriptionFull, category, price, quantity, sizes, oneSize, images, imageDataUrl }) {
     try {
         if (id) {
             // Обновление
-            const updates = { name, description, category, price, quantity, sizes };
+            const updates = { name, description, descriptionFull, category, price, quantity, sizes };
             if (oneSize !== undefined) updates.oneSize = !!oneSize;
             if (Array.isArray(images) && images.length) updates.images = images;
             if (imageDataUrl) updates.imageDataUrl = imageDataUrl;
@@ -795,7 +822,7 @@ function saveProduct({ id, name, description, category, price, quantity, sizes, 
             alert(res.message);
         } else {
             // Добавление
-            const payload = { name, description, category, price, quantity, sizes, oneSize };
+            const payload = { name, description, descriptionFull, category, price, quantity, sizes, oneSize };
             if (Array.isArray(images) && images.length) payload.images = images;
             if (imageDataUrl) payload.imageDataUrl = imageDataUrl;
             const res = window.authSystem.addProduct(payload);
@@ -845,6 +872,7 @@ function loadCategories() {
         }
 
         categoriesTable.innerHTML = `
+            <div class="table-responsive">
             <table class="data-table">
                 <thead>
                     <tr>
@@ -870,6 +898,7 @@ function loadCategories() {
                     `).join('')}
                 </tbody>
             </table>
+            </div>
         `;
     } catch (error) {
         alert('Ошибка при загрузке категорий: ' + error.message);
@@ -924,7 +953,7 @@ function deleteCategoryAdmin(categoryId) {
 }
 
 // Обработка формы категории
-document.getElementById('categoryForm').addEventListener('submit', function(e) {
+document.getElementById('categoryForm').addEventListener('submit', function (e) {
     e.preventDefault();
     try {
         const id = document.getElementById('categoryId').value || null;

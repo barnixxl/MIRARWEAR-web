@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Товар</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .product-detail-container { max-width: 860px; margin:32px auto; background:#fff; border-radius:12px; box-shadow:0 8px 32px #0002; padding:48px 30px 30px 30px; }
+        .gallery-block { display: flex; align-items:center; gap:16px; }
+        .gallery-view {
+            width:350px; height:350px; border-radius:17px; background:#f2f3f7; box-shadow:0 1px 12px #0002; display:flex; align-items:center; justify-content:center;
+        }
+        .gallery-view img { max-width:100%; max-height:100%; border-radius:14px; transition:.25s; }
+        .gallery-controls { display:flex; flex-direction:column; gap:2px; }
+        .gallery-arrow { background:rgba(0,0,0,.09); border:none; border-radius:5px; font-size:24px; cursor:pointer; padding: 9px 13px; transition:.3s; }
+        .gallery-arrow:active,.gallery-arrow:hover { background:#007bff; color:#fff; }
+        .product-detail-info { margin-left:30px; flex:1; }
+        .product-title { font-size:28px; font-weight:700; margin-bottom:8px; }
+        .product-vipprice { color:#f77c00; font-size:25px; font-weight:700; margin-bottom:20px; text-shadow:1px 1px 0 #fff; }
+        .product-sizes label {font-weight:600;}
+        .product-sizes select {font-size:16px; padding:7px 13px; border-radius:5px; margin-left:12px; }
+        .order-btn {margin-top:24px;font-size:19px;width:auto;width:100%;background:#1a1a1a;}
+        .product-description-block { margin-top:44px; background:#f8f9fb; border-radius:14px; padding:28px 28px 15px 28px; font-size:18px; box-shadow:0 2px 10px #0001; }
+        .product-description-block h3 { margin-top:0;font-size:21px; color:#2a2a2a; font-weight:800; margin-bottom:17px; }
+        .descText {white-space:pre-line; line-height:1.63; letter-spacing:0.02em; color:#2d2d2d;}
+    </style>
+</head>
+<body style="background:#f8f8fa;">
+    <div class="product-detail-container">
+        <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:start">
+            <div class="gallery-block">
+                <button class="gallery-arrow" id="arrowPrev">&#10094;</button>
+                <div class="gallery-view"><img id="galleryImage" src="" alt="Фото"></div>
+                <button class="gallery-arrow" id="arrowNext">&#10095;</button>
+            </div>
+            <div class="product-detail-info">
+                <div class="product-title" id="dtProductName"></div>
+                <div class="product-vipprice" id="dtPrice"></div>
+                <div class="product-stock-detail" id="dtStock"></div>
+                <div class="product-sizes" id="dtSizes"></div>
+                <button class="order-btn" id="goOrderBtn">Заказать</button>
+            </div>
+        </div>
+        <div class="product-description-block">
+            <h3>Описание товара</h3>
+            <div class="descText" id="dtDescriptionFull"></div>
+        </div>
+    </div>
+<script src="js/auth.js"></script>
+<script src="js/init-products.js"></script>
+<script>
+function getProductIdFromQuery() {
+    const q = new URLSearchParams(window.location.search);
+    return q.get('id') || '';
+}
+const productId = getProductIdFromQuery();
+const products = (window.authSystem && window.authSystem.getProducts) ? window.authSystem.getProducts() : [];
+const p = products.find(x => x.id === productId);
+const orderBtn = document.getElementById('goOrderBtn');
+if (!p) {
+    document.body.innerHTML = '<div style="text-align:center;margin:100px auto;font-size:30px;">Товар не найден :(</div>';
+} else {
+    document.getElementById('dtProductName').textContent = p.name;
+    document.getElementById('dtPrice').textContent = (Number(p.price).toLocaleString('ru-RU', {style:'currency',currency:'RUB'}));
+    document.getElementById('dtDescriptionFull').textContent = (p.descriptionFull ? p.descriptionFull : (p.description || ''));
+    const stockEl = document.getElementById('dtStock');
+    const qty = Math.max(0, Number(p.quantity) || 0);
+    if (stockEl) {
+        stockEl.textContent = qty > 0 ? `Осталось ${qty} шт.` : 'Нет в наличии';
+        stockEl.classList.toggle('out', qty <= 0);
+    }
+    // Фотки
+    const images = Array.isArray(p.images) ? p.images : (p.imageDataUrl ? [p.imageDataUrl] : []);
+    let imgIndex = 0;
+    function updateGallery(){
+        document.getElementById('galleryImage').src = images[imgIndex] || 'images/placeholder.jpg';
+    }
+    updateGallery();
+    document.getElementById('arrowPrev').onclick = () => { imgIndex = (imgIndex-1+images.length)%images.length; updateGallery(); };
+    document.getElementById('arrowNext').onclick = () => { imgIndex = (imgIndex+1)%images.length; updateGallery(); };
+    // Размеры
+    let sizesHtml = '';
+    if(p.oneSize){ sizesHtml = '<span>Единый размер</span>'; }
+    else if(p.sizes){
+        const enabled = Object.entries(p.sizes).filter(([,c])=>c&&c.enabled).map(([s])=>s);
+        if(enabled.length>0) {
+            sizesHtml = '<label>Размер: <select id="sizeChoice">'+enabled.map(s=>`<option value="${s}">${s}</option>`).join('')+'</select></label>';
+        } else { sizesHtml = '<span>Размеры временно недоступны</span>'; }
+    }
+    document.getElementById('dtSizes').innerHTML = sizesHtml;
+    if (qty <= 0) {
+        orderBtn.disabled = true;
+        orderBtn.textContent = 'Нет в наличии';
+    } else {
+        orderBtn.onclick = ()=>{
+            window.location.href = 'index.html?order=' + encodeURIComponent(p.id);
+        };
+    }
+}
+</script>
+</body>
+</html>

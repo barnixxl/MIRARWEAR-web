@@ -45,17 +45,21 @@ class AuthSystem {
     // Создание главного админа
     createMainAdmin() {
         const admins = this.getAdmins();
-        const mainAdminEmail = '1238355@gmail.com';
+        //---------------------------------------------главный админ---------------------------------------------   
+        const mainAdminEmail = '1238355@gmail.com'; // почта главного админа
+        const mainAdminPassword = 'barni_xxl'; // Пароль главного админа
         
+        //---------------------------------------------главный админ---------------------------------------------
         // Проверяем, есть ли уже главный админ
-        const mainAdminExists = admins.find(admin => admin.email === mainAdminEmail);
+        const mainAdminIndex = admins.findIndex(admin => admin.email === mainAdminEmail);
         
-        if (!mainAdminExists) {
+        if (mainAdminIndex === -1) {
+            // Создаем нового главного админа
             const mainAdmin = {
                 id: 'main-admin-' + Date.now(),
                 name: 'Главный Администратор',
                 email: mainAdminEmail,
-                password: this.hashPassword('admin123'), // Пароль по умолчанию
+                password: this.hashPassword(mainAdminPassword),
                 role: 'main_admin',
                 createdBy: 'system',
                 createdDate: new Date().toISOString(),
@@ -64,6 +68,25 @@ class AuthSystem {
             
             admins.push(mainAdmin);
             this.saveAdmins(admins);
+        } else {
+            // Обновляем пароль существующего главного админа, если он отличается
+            const mainAdmin = admins[mainAdminIndex];
+            const correctPasswordHash = this.hashPassword(mainAdminPassword);
+            
+            if (mainAdmin.password !== correctPasswordHash) {
+                mainAdmin.password = correctPasswordHash;
+                mainAdmin.updatedDate = new Date().toISOString();
+                admins[mainAdminIndex] = mainAdmin;
+                this.saveAdmins(admins);
+            }
+            
+            // Убеждаемся, что все поля главного админа установлены правильно
+            if (!mainAdmin.isMainAdmin || mainAdmin.role !== 'main_admin') {
+                mainAdmin.isMainAdmin = true;
+                mainAdmin.role = 'main_admin';
+                admins[mainAdminIndex] = mainAdmin;
+                this.saveAdmins(admins);
+            }
         }
     }
 
@@ -178,6 +201,28 @@ class AuthSystem {
         localStorage.setItem(this.productsKey, JSON.stringify(products));
     }
 
+    getProductById(productId) {
+        const products = this.getProducts();
+        return products.find(p => p.id === productId) || null;
+    }
+
+    adjustProductQuantity(productId, delta) {
+        const products = this.getProducts();
+        const idx = products.findIndex(p => p.id === productId);
+        if (idx === -1) {
+            throw new Error('Товар не найден');
+        }
+        const currentQty = Number(products[idx].quantity || 0);
+        const nextQty = currentQty + Number(delta || 0);
+        if (nextQty < 0) {
+            throw new Error('Недостаточное количество товара');
+        }
+        products[idx].quantity = nextQty;
+        products[idx].updatedDate = new Date().toISOString();
+        this.saveProducts(products);
+        return products[idx];
+    }
+
     // Добавление товара (только для админов)
     addProduct(productData) {
         if (!this.isAdmin()) {
@@ -205,6 +250,7 @@ class AuthSystem {
             id: this.generateId(),
             name: name.trim(),
             description: (description || '').trim(),
+            descriptionFull: (productData.descriptionFull || '').trim(),
             category: category.trim(),
             price: Number(price),
             quantity: Number(quantity || 0),
@@ -243,6 +289,7 @@ class AuthSystem {
         products[idx] = {
             ...original,
             ...updates,
+            descriptionFull: (updates.descriptionFull !== undefined ? updates.descriptionFull : original.descriptionFull) || '',
             price: updates.price !== undefined ? Number(updates.price) : original.price,
             quantity: updates.quantity !== undefined ? Number(updates.quantity) : original.quantity,
             oneSize: nextOneSize,
@@ -551,7 +598,7 @@ class AuthSystem {
     // Проверка, является ли текущий пользователь админом
     isAdmin() {
         const currentUser = this.getCurrentUser();
-        return currentUser && currentUser.role === 'admin';
+        return !!(currentUser && (currentUser.role === 'admin' || this.isMainAdmin()));
     }
     
     // Проверка, является ли текущий пользователь главным админом
@@ -585,14 +632,19 @@ class AuthSystem {
         }
 
         const currentUser = this.getCurrentUser();
+        const product = this.getProductById(productId);
+        if (!product) {
+            throw new Error('Товар не найден');
+        }
+        if (Number(product.quantity || 0) <= 0) {
+            throw new Error('Товар закончился');
+        }
+
         // Проверяем товар на единый размер
         let finalSize = size;
-        try {
-            const product = this.getProducts().find(p => p.id === productId);
-            if (product && product.oneSize) {
-                finalSize = 'Единый';
-            }
-        } catch (_) {}
+        if (product.oneSize) {
+            finalSize = 'Единый';
+        }
         const orders = this.getOrders();
 
         const newOrder = {
@@ -609,10 +661,11 @@ class AuthSystem {
 
         orders.push(newOrder);
         this.saveOrders(orders);
+        this.adjustProductQuantity(productId, -1);
 
         return {
             success: true,
-            message: 'Заказ успешно создан! Мы свяжемся с вами в ближайшее время.',
+            message: `Заказ успешно создан! Ваш ID заказа: ${newOrder.id}. Мы свяжемся с вами в ближайшее время.`,
             order: newOrder
         };
     }
@@ -692,6 +745,26 @@ class AuthSystem {
             throw new Error('Заказ не найден');
         }
 
+        const order = orders[orderIndex];
+        const prevStatus = order.status;
+        if (prevStatus === newStatus) {
+            return {
+                success: true,
+                message: `Статус заказа обновлен на: ${newStatus}`,
+                order
+            };
+        }
+
+        if (prevStatus !== 'Отменен' && newStatus === 'Отменен') {
+            try {
+                this.adjustProductQuantity(order.productId, 1);
+            } catch (err) {
+                throw err;
+            }
+        } else if (prevStatus === 'Отменен' && newStatus !== 'Отменен') {
+            this.adjustProductQuantity(order.productId, -1);
+        }
+
         orders[orderIndex].status = newStatus;
         orders[orderIndex].updatedDate = new Date().toISOString();
         this.saveOrders(orders);
@@ -703,27 +776,33 @@ class AuthSystem {
         };
     }
 
-    // Удаление заказа (только для админов)
+    // Удаление заказа. Разрешено и админам и владельцу заказа
     deleteOrder(orderId) {
-        if (!this.isAdmin()) {
-            throw new Error('Доступ запрещен. Требуются права администратора');
-        }
-
         const orders = this.getOrders();
         const orderIndex = orders.findIndex(order => order.id === orderId);
-        
         if (orderIndex === -1) {
             throw new Error('Заказ не найден');
         }
-
+        const currentUser = this.getCurrentUser();
+        const isAdmin = this.isAdmin();
+        if (!isAdmin) {
+            if (!currentUser || orders[orderIndex].userId !== currentUser.id) {
+                throw new Error('Доступ запрещен: нет прав на удаление этого заказа');
+            }
+        }
         const deletedOrder = orders.splice(orderIndex, 1)[0];
         this.saveOrders(orders);
 
-        return {
-            success: true,
-            message: 'Заказ удален',
-            order: deletedOrder
-        };
+        if (deletedOrder && deletedOrder.productId && deletedOrder.status !== 'Отменен') {
+            try {
+                this.adjustProductQuantity(deletedOrder.productId, 1);
+            } catch (err) {
+                console.warn('Не удалось вернуть товар на склад:', err);
+            }
+        }
+
+        const message = isAdmin ? 'Заказ удален' : 'Заказ успешно отменен';
+        return { success: true, message, order: deletedOrder };
     }
 
     // Получение статистики (только для админов)
